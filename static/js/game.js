@@ -114,7 +114,7 @@
 
   Game.save_game = function(){
     var game;
-    game = JSON.stringify(this.states);
+    game = JSON.stringify(this.states, null, "  ");
     // FIXME: Save game to a shit file!
     return game;
   };
