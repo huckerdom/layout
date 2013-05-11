@@ -122,8 +122,13 @@
   Game.load_game = function(text){
     this.states = JSON.parse(text);
     this.current_state = 0;
-    // Update players to state 1.
-    var state = this.states[this.current_state];
+    this.reset_to_state(this.current_state);
+    return this;
+  };
+
+  Game.reset_to_state = function(state_index){
+    state_index = state_index||0;
+    var state = this.states[state_index];
     this.players.forEach(function(player, idx){
       player.update(state.players[idx]);
     });
@@ -131,6 +136,26 @@
     this.stage.update();
     return this;
   };
+
+  Game.animate = function(fps, start, end){
+    fps = fps||24;
+    createjs.Ticker.setFPS(fps);
+    createjs.Ticker.addEventListener("tick", Game.stage);
+    var tweens = [], labels = [];
+    this.players.forEach(function(player, idx){
+      this.states.forEach(function(state){
+        var tween = createjs.Tween.get(player).to(state.players[idx], fps*2);
+        tweens.push(tween);
+      }, this);
+    }, this);
+    Game.timeline = new createjs.Timeline(tweens, labels, {useTicks:true, paused: true});
+    Game.stage.update();
+    Game.timeline.setPaused(false);
+    //Game.
+  };
+
+
+  /********************************************************************************/
 
   // Disc class
   var Disc = {
@@ -150,6 +175,7 @@
 
   };
 
+  /********************************************************************************/
 
   // Player class
   var Player = {
