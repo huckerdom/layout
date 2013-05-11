@@ -129,6 +129,7 @@
   Game.reset_to_state = function(state_index){
     state_index = state_index||0;
     var state = this.states[state_index];
+    this.current_state = state_index;
     this.players.forEach(function(player, idx){
       player.update(state.players[idx]);
     });
@@ -150,7 +151,8 @@
       this.states.forEach(function(state, j){
         // Skip adding the first state to animation
         if (j <= start || j >= end) {return;};
-        tween.to(state.players[i], fps*2).wait(fps);
+        tween.to(state.players[i], fps*2).call(function(){this.current_state=j}, null, this)
+          .wait(fps);
         tweens.push(tween);
       }, this);
     }, this);
