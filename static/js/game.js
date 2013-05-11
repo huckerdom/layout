@@ -143,8 +143,9 @@
     createjs.Ticker.addEventListener("tick", Game.stage);
     var tweens = [], labels = [];
     this.players.forEach(function(player, idx){
+      var tween = createjs.Tween.get(player);
       this.states.forEach(function(state){
-        var tween = createjs.Tween.get(player).to(state.players[idx], fps*2);
+        tween.to(state.players[idx], fps*2).wait(fps);
         tweens.push(tween);
       }, this);
     }, this);
