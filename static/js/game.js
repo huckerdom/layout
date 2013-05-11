@@ -139,13 +139,18 @@
 
   Game.animate = function(fps, start, end){
     fps = fps||24;
+    start = start || 0;
+    end = end || Game.states.length;
+    Game.reset_to_state(start);
     createjs.Ticker.setFPS(fps);
     createjs.Ticker.addEventListener("tick", Game.stage);
     var tweens = [], labels = [];
-    this.players.forEach(function(player, idx){
+    this.players.forEach(function(player, i){
       var tween = createjs.Tween.get(player);
-      this.states.forEach(function(state){
-        tween.to(state.players[idx], fps*2).wait(fps);
+      this.states.forEach(function(state, j){
+        // Skip adding the first state to animation
+        if (j <= start || j >= end) {return;};
+        tween.to(state.players[i], fps*2).wait(fps);
         tweens.push(tween);
       }, this);
     }, this);
