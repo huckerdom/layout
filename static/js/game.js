@@ -122,7 +122,7 @@
   Game.load_game = function(text){
     this.states = JSON.parse(text);
     this.current_state = 0;
-    this.reset_to_state(this.current_state);
+    if (this.states) {this.reset_to_state(this.current_state)};
     return this;
   };
 
