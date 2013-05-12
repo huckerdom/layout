@@ -17,19 +17,12 @@
    - Add tools to measure distances or add some sort of a ruler/grid.
    - Add keyboard shortcuts to move around players..
    - allow selecting multiple players, and move with keyboard/mouse?
+   - Allow drawing lines... which can be saved in the state..
 */
 
 /* TESTS!
 
 */
-
-  /* TODO:
-  // Drag around the players, and save the state.
-  // Allow adding a "commentary" or "description" for each state...
-  // [2] Allow drawing lines... which can be saved in the state..
-  // Keep saving states, in that way.
-  // Animate between the states!
-  */
 
 (function () {
 
@@ -54,6 +47,8 @@
     // Do miscellaneous stuff
     add_download('saveGame');
     add_upload('loadGame');
+    add_capture('captureGameState');
+    add_animate('animateGame');
   }
 
   /* Lots of Cleanup needed here!
@@ -63,7 +58,7 @@
   */
   // Sets up the field
   Game.init_setup_field = function(scale) {
-    scale = scale || 7;
+    scale = scale || 10;
     var length = 100 * scale,
     breadth = 37 * scale,
     x = (this.stage.canvas.width - length)/2,
@@ -79,8 +74,6 @@
   };
 
   // Sets up the players
-  // The players can be updated using a State.
-  // Should take an argument, number of players
   Game.init_setup_players = function(num_players) {
     num_players = num_players || 7;
     var field = this.stage.getChildByName('field')
@@ -104,7 +97,6 @@
     var state = {};
     state.players = [];
     this.states.push(state);
-
     this.players.forEach(function(player){
       state.players.push(player.to_dict());
     });
@@ -129,6 +121,7 @@
   Game.reset_to_state = function(state_index){
     state_index = state_index||0;
     var state = this.states[state_index];
+    if (!state) {return;};
     this.current_state = state_index;
     this.players.forEach(function(player, idx){
       player.update(state.players[idx]);
@@ -139,6 +132,7 @@
   };
 
   Game.animate = function(fps, start, end){
+    if ( !this.players || !this.states) { return; };
     fps = fps||24;
     start = start || 0;
     end = end || Game.states.length;
@@ -159,7 +153,6 @@
     Game.timeline = new createjs.Timeline(tweens, labels, {useTicks:true, paused: true});
     Game.stage.update();
     Game.timeline.setPaused(false);
-    //Game.
   };
 
 
@@ -188,7 +181,7 @@
   // Player class
   var Player = {
     name: 0,
-    radius: 5,
+    radius: 7,
     color: "green",
     _x: 0,
     _y: 0,
@@ -223,7 +216,7 @@
       // FIXME: color should be selected based on our color (complementing?)
       this.label = new createjs.Text(this.name, 'bold 10px Arial', 'green');
       this.label.textAlign = "center";
-      this.label.y = -this.radius;
+      this.label.y = -this.radius/1.4;
 
       // Add the body and the label into a container
       this.player = new createjs.Container();
@@ -294,6 +287,7 @@
     });
   }
 
+  // FIXME: Add buttons, instead of ugly looking links.
   var add_download = function(label){
     window.URL = window.URL || window.webkitURL;
     var download = $('<a>').attr('id', label).text('Save Game')
@@ -308,18 +302,28 @@
 
   }
 
-  // FIXME: Add buttons, instead of ugly looking links.
-  // FIXME: capture_state button.
   var add_upload = function(label){
     var upload_button = $('<input type=file>').attr('id', 'upload-game-file')
-      .attr('accept', 'text/plain, text/json').css('display', 'none')
+      .attr('accept', 'text/plain').css('display', 'none')
       .insertAfter(Game.stage.canvas).attr('href', '#')
       .change(read_game_files);
 
-    var upload = $('<a>').attr('id', label).text('Load Game')
+    $('<a>').attr('id', label).text('Load Game')
       .insertAfter(Game.stage.canvas).attr('href', '#').css('display', 'block')
       .click(function(evt){upload_button.click()})
 
+  }
+
+  var add_capture = function(label){
+    $('<a>').attr('id', label).text('Capture Game State').css('display', 'block')
+      .insertAfter(Game.stage.canvas).attr('href', '#')
+      .click(function(evt){Game.capture_state()});
+  }
+
+  var add_animate = function(label){
+    $('<a>').attr('id', label).text('Animate Game').css('display', 'block')
+      .insertAfter(Game.stage.canvas).attr('href', '#')
+      .click(function(evt){Game.animate()});
   }
 
   var read_game_files = function(evt){
