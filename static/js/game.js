@@ -26,6 +26,17 @@
 
 (function () {
 
+  var DIMENSIONS = {
+    length: 100,
+    breadth: 37,
+    end_zones: [18, 82],
+    bricks: [36, 64],
+    boundary: 10,
+    line_width: 0.1,
+    player_radius: 7,
+    disc_radius: 3
+  }
+
   var Game = {
     current_state: 0,
     states: [],
@@ -35,9 +46,6 @@
 
   // Entry point for the whole thing
   Game.init_game = function() {
-    // game = Object.create(Game);
-    // // FIXME: is this reasonable?
-    // window.Game = game;
     this.id = this.id || "gameCanvas";
     this.stage = new createjs.Stage(this.id);
     this.init_setup_field();
@@ -52,24 +60,51 @@
   }
 
   /* Lots of Cleanup needed here!
-     // FIXME: Create a Field class
      // FIXME: Add a legend for player colors
      // FIXME: Add an arrow to show where the team on offense is scoring
   */
   // Sets up the field
   Game.init_setup_field = function(scale) {
     scale = scale || 10;
-    var length = 100 * scale,
-    breadth = 37 * scale,
-    x = (this.stage.canvas.width - length)/2,
-    y = (this.stage.canvas.height - breadth)/2;
+
+    var length = DIMENSIONS.length * scale, breadth = DIMENSIONS.breadth * scale;
+    var x = (this.stage.canvas.width - length)/2, y = (this.stage.canvas.height - breadth)/2;
+    var b = DIMENSIONS.boundary * scale;
 
     var field = new createjs.Shape();
     field.name = 'field';
+
+    // Draw extra outer zone
+    field.graphics.setStrokeStyle(b, 'round', 'round');
+    field.graphics.beginStroke('#00aa00').drawRect(x-b/2, y-b/2, length+b, breadth+b);
+    field.graphics.endStroke();
+
+    // Draw field
+    field.graphics.setStrokeStyle(DIMENSIONS.line_width*scale, 'round', 'round');
+    field.graphics.beginStroke(('#ffffff'));
     field.graphics.beginFill("green").drawRect(x, y, length, breadth);
+    field.graphics.endStroke().endFill();
     field.dimensions = new createjs.Rectangle(x, y, length, breadth);
 
-    // FIXME: draw lines and shit ...
+    // Draw end zone lines
+    field.graphics.beginStroke(('#ffffff'));
+    field.graphics.moveTo(x + DIMENSIONS.end_zones[0]*scale, y);
+    field.graphics.lineTo(x + DIMENSIONS.end_zones[0]*scale, y+breadth);
+    field.graphics.moveTo(x + DIMENSIONS.end_zones[1]*scale, y);
+    field.graphics.lineTo(x + DIMENSIONS.end_zones[1]*scale, y+breadth);
+
+    // Draw brick marks
+    var c = DIMENSIONS.player_radius/2
+    field.graphics.moveTo(x + DIMENSIONS.bricks[0]*scale - c, y + breadth/2 - c);
+    field.graphics.lineTo(x + DIMENSIONS.bricks[0]*scale + c, y + breadth/2 + c);
+    field.graphics.moveTo(x + DIMENSIONS.bricks[0]*scale - c, y + breadth/2 + c);
+    field.graphics.lineTo(x + DIMENSIONS.bricks[0]*scale + c, y + breadth/2 - c);
+
+    field.graphics.moveTo(x + DIMENSIONS.bricks[1]*scale - c, y + breadth/2 - c);
+    field.graphics.lineTo(x + DIMENSIONS.bricks[1]*scale + c, y + breadth/2 + c);
+    field.graphics.moveTo(x + DIMENSIONS.bricks[1]*scale - c, y + breadth/2 + c);
+    field.graphics.lineTo(x + DIMENSIONS.bricks[1]*scale + c, y + breadth/2 - c);
+
     this.stage.addChild(field);
   };
 
@@ -162,7 +197,7 @@
   var Disc = {
     x: 0,
     y: 0,
-    radius: 3,
+    radius: DIMENSIONS.disc_radius,
     color: "white",
 
     create: function(stage){
@@ -181,7 +216,7 @@
   // Player class
   var Player = {
     name: 0,
-    radius: 7,
+    radius: DIMENSIONS.player_radius,
     color: "green",
     _x: 0,
     _y: 0,
