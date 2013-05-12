@@ -20,8 +20,14 @@
    - Allow drawing lines... which can be saved in the state..
 */
 
-/* TESTS!
 
+/*
+   TESTS!
+*/
+
+/*
+   TODO
+   - Have scale factor in saved game state... or restoring fails.
 */
 
 (function () {
