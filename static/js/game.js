@@ -301,10 +301,9 @@
 
     download.click(function(evt){
       var blob = new Blob([Game.save_game()], {type: 'text/plain'});
-      // FIXME: Change filename to something meaningful
+      var d = new Date(), date = d.getDate(), month = d.getMonth() + 1, year = d.getFullYear();
       $(evt.target).attr("href", window.URL.createObjectURL(blob))
-        .attr("download", "woeii.txt");
-      //this.click();
+        .attr("download", "saved-game-" + year + '-' + month + '-' + date + ".txt");
     });
 
   }
