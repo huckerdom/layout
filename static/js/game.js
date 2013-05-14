@@ -391,7 +391,7 @@
       var blob = new Blob([game.save_game()], {type: 'text/plain'});
       var d = new Date(), date = d.getDate(), month = d.getMonth() + 1, year = d.getFullYear();
       $(evt.target).attr("href", window.URL.createObjectURL(blob))
-        .attr("download", "saved-game-" + year + '-' + month + '-' + date + ".txt");
+        .attr("download", "layout-" + year + '-' + month + '-' + date + ".txt");
     });
 
   }
