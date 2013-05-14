@@ -48,21 +48,58 @@
     states: [],
     players: [],
     stage: null,
+    instances: []
   };
 
-  // Entry point for the whole thing
+
+  // Initialize game.js
+  Game.init = function(){
+    var head = document.getElementsByTagName("head")[0];
+    scripts = [
+      'http://code.jquery.com/jquery-1.9.1.min.js',
+      'http://code.createjs.com/createjs-2013.02.12.min.js',
+    ];
+    for (var i=0; i<scripts.length; i++) {
+      var newScript = document.createElement('script');
+      newScript.type = 'text/javascript';
+      newScript.src = scripts[i] ;
+      head.appendChild(newScript);
+    };
+
+    // Wait for the javascript to load, before going ahead
+    var load_game = function(){
+      if (window.createjs && window.jQuery) {
+        Game.create_instances();
+      } else {
+        setTimeout(load_game, 500);
+      }
+    };
+
+    load_game();
+
+  };
+
+  // Create games for each canvas
+  Game.create_instances = function() {
+    var canvases = $('canvas[class~=layout]'), game;
+    // For each canvas, look at the data file and do shit!
+    for (var i=0; i<canvases.length; i++) {
+      game = Object.create(Game);
+      game.players = [];
+      game.states = [];
+      game.stage = new createjs.Stage(canvases[i]);
+      Game.instances.push(game);
+      game.init_game();
+    }
+
+  }
+
+  // Initial setup for a game instance
   Game.init_game = function() {
-    this.id = this.id || "gameCanvas";
-    this.stage = new createjs.Stage(this.id);
     this.init_setup_field();
     this.init_setup_players();
     this.stage.update();
-
-    // Do miscellaneous stuff
-    add_download('saveGame');
-    add_upload('loadGame');
-    add_capture('captureGameState');
-    add_animate('animateGame');
+    this.add_UI();
   }
 
   /* Lots of Cleanup needed here!
@@ -81,7 +118,7 @@
     field.name = 'field';
 
     // Draw extra outer zone
-    field.graphics.setStrokeStyle(b, 'round', 'round');
+    field.graphics.setStrokeStyle(b);
     field.graphics.beginStroke('#00aa00').drawRect(x-b/2, y-b/2, length+b, breadth+b);
     field.graphics.endStroke();
 
@@ -133,6 +170,7 @@
     };
   };
 
+
   // Add the current state of the stage to the list of states in Game
   Game.capture_state = function(){
     var state = {};
@@ -152,8 +190,15 @@
     return game;
   };
 
-  Game.load_game = function(text){
-    this.states = JSON.parse(text);
+  Game.update = function(text){
+    if (!text) { alert('Empty text, cannot load game'); };
+    try {
+      var states = JSON.parse(text);
+      // FIXME: add more checks?
+    } catch (e) {
+      alert('Not a valid json file, cannot load game');
+    }
+    this.states = states;
     this.current_state = 0;
     if (this.states) {this.reset_to_state(this.current_state)};
     return this;
@@ -176,10 +221,10 @@
     if ( !this.players || !this.states) { return; };
     fps = fps||24;
     start = start || 0;
-    end = end || Game.states.length;
-    Game.reset_to_state(start);
+    end = end || this.states.length;
+    this.reset_to_state(start);
     createjs.Ticker.setFPS(fps);
-    createjs.Ticker.addEventListener("tick", Game.stage);
+    createjs.Ticker.addEventListener("tick", this.stage);
     var tweens = [], labels = [];
     this.players.forEach(function(player, i){
       var tween = createjs.Tween.get(player);
@@ -191,10 +236,18 @@
         tweens.push(tween);
       }, this);
     }, this);
-    Game.timeline = new createjs.Timeline(tweens, labels, {useTicks:true, paused: true});
-    Game.stage.update();
-    Game.timeline.setPaused(false);
+    this.timeline = new createjs.Timeline(tweens, labels, {useTicks:true, paused: true});
+    this.stage.update();
+    this.timeline.setPaused(false);
   };
+
+  Game.add_UI = function() {
+    // Do miscellaneous UI stuff
+    add_download(this);
+    add_upload(this);
+    add_capture(this);
+    add_animate(this);
+  }
 
 
   /********************************************************************************/
@@ -329,13 +382,13 @@
   }
 
   // FIXME: Add buttons, instead of ugly looking links.
-  var add_download = function(label){
+  var add_download = function(game){
     window.URL = window.URL || window.webkitURL;
-    var download = $('<a>').attr('id', label).text('Save Game')
-      .insertAfter(Game.stage.canvas).attr('href', '#').css('display', 'block');
+    var download = $('<a>').attr('id', 'saveGame').text('Save Game')
+      .insertAfter(game.stage.canvas).attr('href', '#').css('display', 'block');
 
     download.click(function(evt){
-      var blob = new Blob([Game.save_game()], {type: 'text/plain'});
+      var blob = new Blob([game.save_game()], {type: 'text/plain'});
       var d = new Date(), date = d.getDate(), month = d.getMonth() + 1, year = d.getFullYear();
       $(evt.target).attr("href", window.URL.createObjectURL(blob))
         .attr("download", "saved-game-" + year + '-' + month + '-' + date + ".txt");
@@ -343,53 +396,47 @@
 
   }
 
-  var add_upload = function(label){
+  var add_upload = function(game){
     var upload_button = $('<input type=file>').attr('id', 'upload-game-file')
       .attr('accept', 'text/plain').css('display', 'none')
-      .insertAfter(Game.stage.canvas).attr('href', '#')
-      .change(read_game_files);
+      .insertAfter(game.stage.canvas).attr('href', '#')
+      .change(function(evt){
+        read_game_files(evt, game);
+      });
 
-    $('<a>').attr('id', label).text('Load Game')
-      .insertAfter(Game.stage.canvas).attr('href', '#').css('display', 'block')
+    $('<a>').attr('id', 'loadGame').text('Load Game')
+      .insertAfter(game.stage.canvas).attr('href', '#').css('display', 'block')
       .click(function(evt){upload_button.click()})
 
   }
 
-  var add_capture = function(label){
-    $('<a>').attr('id', label).text('Capture Game State').css('display', 'block')
-      .insertAfter(Game.stage.canvas).attr('href', '#')
-      .click(function(evt){Game.capture_state()});
+  var add_capture = function(game){
+    $('<a>').attr('id', 'captureGameState').text('Capture Game State').css('display', 'block')
+      .insertAfter(game.stage.canvas).attr('href', '#')
+      .click(function(evt){game.capture_state()});
   }
 
-  var add_animate = function(label){
-    $('<a>').attr('id', label).text('Animate Game').css('display', 'block')
-      .insertAfter(Game.stage.canvas).attr('href', '#')
-      .click(function(evt){Game.animate()});
+  var add_animate = function(game){
+    $('<a>').attr('id', 'animateGame').text('Animate Game').css('display', 'block')
+      .insertAfter(game.stage.canvas).attr('href', '#')
+      .click(function(evt){game.animate()});
   }
 
-  var read_game_files = function(evt){
+  var read_game_files = function(evt, game){
     var file = evt.target.files[0];
     var gameReader = new FileReader();
 
     gameReader.readAsText(file);
     gameReader.onload = function(evt){
-      try {
-        // Creating a temporary object so as to not leave Game in a funky state
-        obj = Object.create(Game);
-        obj.load_game(evt.target.result);
-      } catch (e) {
-        console.log(e);
-        alert('Sorry, not a valid Game file.');
-        return;
-      }
-      Game.load_game(evt.target.result);
-    }
+      var text = evt.target.result;
+      if (text) { game.update(text) };
+    };
 
   };
 
 
   /********************************************************************************/
-
+  Game.init()
   window.Game = Game;
 
 })();
