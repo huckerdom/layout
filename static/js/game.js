@@ -218,7 +218,7 @@
   };
 
   Game.animate = function(fps, start, end){
-    if ( !this.players || !this.states) { return; };
+    if ( !this.players.length || !this.states.length ) { return; };
     fps = fps||24;
     start = start || 0;
     end = end || this.states.length;
