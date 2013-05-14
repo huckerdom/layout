@@ -174,18 +174,25 @@
         this.players.push(player);
       };
     };
+
+    Game._default_state = this.get_current_state();
+
   };
 
-
-  // Add the current state of the stage to the list of states in Game
-  Game.capture_state = function(){
+  Game.get_current_state = function(){
     var state = {};
     state.players = [];
-    this.states.push(state);
     this.players.forEach(function(player){
       state.players.push(player.to_dict());
     });
     // FIXME: state.disc = XXX
+    return state;
+  }
+
+  // Add the current state of the stage to the list of states in Game
+  Game.capture_state = function(){
+    var state = this.get_current_state();
+    this.states.push(state);
     return state;
   };
 
@@ -207,6 +214,7 @@
     this.states = states;
     this.current_state = 0;
     if (this.states) {this.reset_to_state(this.current_state)};
+    this.stage.update();
     return this;
   };
 
@@ -256,11 +264,18 @@
     });
   }
 
+  Game.clear_states = function(){
+    this.states = [Game._default_state];
+    this.reset_to_state();
+    this.states = [];
+  };
+
   Game.add_UI = function() {
     // Do miscellaneous UI stuff
     add_download(this);
     add_upload(this);
     add_capture(this);
+    add_clear_states(this);
     add_animate(this);
   }
 
@@ -429,6 +444,12 @@
     $('<a>').attr('id', 'captureGameState').text('Capture Game State').css('display', 'block')
       .insertAfter(game.stage.canvas).attr('href', '#')
       .click(function(evt){game.capture_state()});
+  }
+
+  var add_clear_states = function(game){
+    $('<a>').attr('id', 'clearGameStates').text('Clear All Game States').css('display', 'block')
+      .insertAfter(game.stage.canvas).attr('href', '#')
+      .click(function(evt){game.clear_states()});
   }
 
   var add_animate = function(game){
