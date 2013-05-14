@@ -96,10 +96,16 @@
 
   // Initial setup for a game instance
   Game.init_game = function() {
+    // Setup the canvas to have a field and default player objects.
     this.init_setup_field();
     this.init_setup_players();
     this.stage.update();
+    // Read layout file from data-layout attribute on canvas
+    this.read_layout_file();
+    this.stage.update();
+    // Add buttons and other stuff
     this.add_UI();
+
   }
 
   /* Lots of Cleanup needed here!
@@ -240,6 +246,15 @@
     this.stage.update();
     this.timeline.setPaused(false);
   };
+
+  Game.read_layout_file = function(){
+    var layout_file = this.stage.canvas.dataset.layoutFile;
+    if (layout_file == undefined) { return; }
+    game = this;
+    var read_layout = $.get(layout_file, function(data){
+      game.update(data);
+    });
+  }
 
   Game.add_UI = function() {
     // Do miscellaneous UI stuff
