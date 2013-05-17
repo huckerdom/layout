@@ -43,12 +43,14 @@
     disc_radius: 3
   }
 
+  var svgNS = "http://www.w3.org/2000/svg";
+
   var Game = {
     current_state: 0,
     states: [],
     players: [],
-    stage: null,
-    instances: []
+    instances: [],
+    canvas: null  // SVG element
   };
 
 
@@ -56,8 +58,8 @@
   Game.init = function(){
     var head = document.getElementsByTagName("head")[0];
     scripts = [
-      'http://code.jquery.com/jquery-1.9.1.min.js',
-      'http://code.createjs.com/createjs-2013.02.12.min.js',
+      //'http://code.jquery.com/jquery-1.9.1.min.js',
+      // 'http://code.createjs.com/createjs-2013.02.12.min.js',
     ];
     for (var i=0; i<scripts.length; i++) {
       var newScript = document.createElement('script');
@@ -66,28 +68,21 @@
       head.appendChild(newScript);
     };
 
-    // Wait for the javascript to load, before going ahead
-    var load_game = function(){
-      if (window.createjs && window.jQuery) {
-        Game.create_instances();
-      } else {
-        setTimeout(load_game, 500);
-      }
-    };
-
-    load_game();
+    // Wait for the page to load, before going ahead
+    window.onload = Game.create_instances;
 
   };
 
   // Create games for each canvas
   Game.create_instances = function() {
-    var canvases = $('canvas[class~=layout]'), game;
+    //var canvases = d('svg[class~=layout]'), game;
+    var canvases = document.getElementsByTagName('svg'), game;
     // For each canvas, look at the data file and do shit!
     for (var i=0; i<canvases.length; i++) {
       game = Object.create(Game);
       game.players = [];
       game.states = [];
-      game.stage = new createjs.Stage(canvases[i]);
+      game.canvas = canvases[i];
       Game.instances.push(game);
       game.init_game();
     }
@@ -99,12 +94,10 @@
     // Setup the canvas to have a field and default player objects.
     this.init_setup_field();
     this.init_setup_players();
-    this.stage.update();
     // Read layout file from data-layout attribute on canvas
-    this.read_layout_file();
-    this.stage.update();
+    //this.read_layout_file();
     // Add buttons and other stuff
-    this.add_UI();
+    // this.add_UI();
 
   }
 
@@ -117,60 +110,95 @@
     scale = scale || 10;
 
     var length = DIMENSIONS.length * scale, breadth = DIMENSIONS.breadth * scale;
-    var x = (this.stage.canvas.width - length)/2, y = (this.stage.canvas.height - breadth)/2;
+    var x = (this.canvas.getAttribute('width') - length)/2, y = (this.canvas.getAttribute('height') - breadth)/2;
     var b = DIMENSIONS.boundary * scale;
 
-    var field = new createjs.Shape();
-    field.name = 'field';
-
     // Draw extra outer zone
-    field.graphics.setStrokeStyle(b);
-    field.graphics.beginStroke('#00aa00').drawRect(x-b/2, y-b/2, length+b, breadth+b);
-    field.graphics.endStroke();
+    create_element('rect',
+                   {
+                     'x': x-b/2, 'y': y-b/2,
+                     'width': length+b, 'height': breadth+b,
+                     'stroke': '#00aa00', 'stroke-width': b
+                   }, this.canvas);
 
     // Draw field
-    field.graphics.setStrokeStyle(DIMENSIONS.line_width*scale, 'round', 'round');
-    field.graphics.beginStroke(('#ffffff'));
-    field.graphics.beginFill("green").drawRect(x, y, length, breadth);
-    field.graphics.endStroke().endFill();
-    field.dimensions = new createjs.Rectangle(x, y, length, breadth);
+    create_element('rect',
+                   {
+                     'id': 'field',
+                     'width': length, 'height': breadth,
+                     'x': x, 'y': y, 'fill': 'green',
+                     'stroke': '#ffffff', 'stroke-width': DIMENSIONS.line_width*scale,
+                   }, this.canvas);
 
     // Draw end zone lines
-    field.graphics.beginStroke(('#ffffff'));
-    field.graphics.moveTo(x + DIMENSIONS.end_zones[0]*scale, y);
-    field.graphics.lineTo(x + DIMENSIONS.end_zones[0]*scale, y+breadth);
-    field.graphics.moveTo(x + DIMENSIONS.end_zones[1]*scale, y);
-    field.graphics.lineTo(x + DIMENSIONS.end_zones[1]*scale, y+breadth);
+    create_element('line',
+                   {
+                     'x1': x + DIMENSIONS.end_zones[0]*scale, 'y1': y,
+                     'x2': x + DIMENSIONS.end_zones[0]*scale, 'y2': y + breadth,
+                     'stroke': 'white', 'stroke-width': DIMENSIONS.line_width*scale,
+                     'class': 'field-lines',
+                   }, this.canvas);
+
+    create_element('line',
+                   {
+                     'x1': x + DIMENSIONS.end_zones[1]*scale, 'y1': y,
+                     'x2': x + DIMENSIONS.end_zones[1]*scale, 'y2': y+breadth,
+                     'stroke': 'white', 'stroke-width': DIMENSIONS.line_width*scale,
+                     'class': 'field-lines',
+                     }, this.canvas);
 
     // Draw brick marks
     var c = DIMENSIONS.player_radius/2
-    field.graphics.moveTo(x + DIMENSIONS.bricks[0]*scale - c, y + breadth/2 - c);
-    field.graphics.lineTo(x + DIMENSIONS.bricks[0]*scale + c, y + breadth/2 + c);
-    field.graphics.moveTo(x + DIMENSIONS.bricks[0]*scale - c, y + breadth/2 + c);
-    field.graphics.lineTo(x + DIMENSIONS.bricks[0]*scale + c, y + breadth/2 - c);
 
-    field.graphics.moveTo(x + DIMENSIONS.bricks[1]*scale - c, y + breadth/2 - c);
-    field.graphics.lineTo(x + DIMENSIONS.bricks[1]*scale + c, y + breadth/2 + c);
-    field.graphics.moveTo(x + DIMENSIONS.bricks[1]*scale - c, y + breadth/2 + c);
-    field.graphics.lineTo(x + DIMENSIONS.bricks[1]*scale + c, y + breadth/2 - c);
+    // Left brick
+    create_element('line',
+                   {
+                     'x1': x + DIMENSIONS.bricks[0]*scale - c, 'y1': y + breadth/2 - c,
+                     'x2': x + DIMENSIONS.bricks[0]*scale + c, 'y2': y + breadth/2 + c,
+                     'stroke': 'white', 'stroke-width': DIMENSIONS.line_width*scale,
+                     'class': 'field-lines',
+                   }, this.canvas);
+    create_element('line',
+                   {
+                     'x1': x + DIMENSIONS.bricks[0]*scale - c, 'y1': y + breadth/2 + c,
+                     'x2': x + DIMENSIONS.bricks[0]*scale + c, 'y2': y + breadth/2 - c,
+                     'stroke': 'white', 'stroke-width': DIMENSIONS.line_width*scale,
+                     'class': 'field-lines',
+                   }, this.canvas);
 
-    this.stage.addChild(field);
+    // Right brick
+    create_element('line',
+                   {
+                     'x1': x + DIMENSIONS.bricks[1]*scale - c, 'y1': y + breadth/2 - c,
+                     'x2': x + DIMENSIONS.bricks[1]*scale + c, 'y2': y + breadth/2 + c,
+                     'stroke': 'white', 'stroke-width': DIMENSIONS.line_width*scale,
+                     'class': 'field-lines',
+                   }, this.canvas);
+    create_element('line',
+                   {
+                     'x1': x + DIMENSIONS.bricks[1]*scale - c, 'y1': y + breadth/2 + c,
+                     'x2': x + DIMENSIONS.bricks[1]*scale + c, 'y2': y + breadth/2 - c,
+                     'stroke': 'white', 'stroke-width': DIMENSIONS.line_width*scale,
+                     'class': 'field-lines',
+                   }, this.canvas);
+
   };
 
   // Sets up the players
   Game.init_setup_players = function(num_players) {
     num_players = num_players || 7;
-    var field = this.stage.getChildByName('field')
+    var field = this.canvas.getElementById('field');
 
     // Setup players;
     for (var i=1; i<=num_players; i++) {
       for (var t in {o:null, d:null}){
         var x_pos = t==="o"?.18:.82;
-        var d = field.dimensions;
+        var d = {x: field.getAttribute('x'), y: field.getAttribute('y'),
+                 width: field.getAttribute('width'), height: field.getAttribute('height')};
         player = Player.from_dict({type:t, name:i,
                                    x:d.x+d.width*x_pos,
                                    y:d.y+d.height/(num_players+1)*i});
-        player.draw(this.stage);
+        player.draw(this.canvas);
         this.players.push(player);
       };
     };
@@ -468,6 +496,15 @@
       if (text) { game.update(text) };
     };
 
+  };
+
+  // Creates and adds an element of given type, with specified attributes to the given svg element.
+  var create_element = function(type, attr_dict, svg){
+    var elem = document.createElementNS(svgNS, type);
+    for (var attr in attr_dict){
+      elem.setAttribute(attr, attr_dict[attr]);
+    };
+    svg.appendChild(elem);
   };
 
 
