@@ -1,35 +1,3 @@
-/* IDEAS...
-
-   - Snap players to grid
-   - Different line types, and line colors.
-   - Undo, redo
-   - Load, Save, Share, search, blah, blah, blah...
-   - Convert to PDF
-   - Print friendly
-   - Add notes/commentary/description to each play, each frame/stage
-   - Offense only mode; Offense and Defense mode; Defense only mode...
-   - Rulers/scale to see the strategy to scale...
-   - Standard templates
-   - Select multiple  players to move around.. both offense and defense
-   - Show players' trail to see how players are moving
-   - Handlers and cutters can be shown in different colors
-   - Score?
-   - Add tools to measure distances or add some sort of a ruler/grid.
-   - Add keyboard shortcuts to move around players..
-   - allow selecting multiple players, and move with keyboard/mouse?
-   - Allow drawing lines... which can be saved in the state..
-*/
-
-
-/*
-   TESTS!
-*/
-
-/*
-   TODO
-   - Have scale factor in saved game state... or restoring fails.
-*/
-
 (function () {
 
   var DIMENSIONS = {
@@ -91,11 +59,14 @@
 
   // Initial setup for a game instance
   Game.init_game = function() {
+
     // Setup the canvas to have a field and default player objects.
     this.init_setup_field();
     this.init_setup_players();
+
     // Read layout file from data-layout attribute on canvas
     //this.read_layout_file();
+
     // Add buttons and other stuff
     // this.add_UI();
 
