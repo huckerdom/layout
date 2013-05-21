@@ -81,7 +81,8 @@
     scale = scale || 10;
 
     var length = DIMENSIONS.length * scale, breadth = DIMENSIONS.breadth * scale;
-    var x = (this.canvas.getAttribute('width') - length)/2, y = (this.canvas.getAttribute('height') - breadth)/2;
+    var x = (this.canvas.getAttributeNS(null, 'width') - length)/2,
+        y = (this.canvas.getAttributeNS(null, 'height') - breadth)/2;
     var b = DIMENSIONS.boundary * scale;
 
     // Draw extra outer zone
@@ -164,10 +165,13 @@
     for (var i=1; i<=num_players; i++) {
       for (var t in {o:null, d:null}){
         var x_pos = t==="o"?.18:.82;
-        var d = {x: field.getAttribute('x'), y: field.getAttribute('y'),
-                 width: field.getAttribute('width'), height: field.getAttribute('height')};
+        var x_rand = Math.random() * DIMENSIONS.player_radius * 2 * (t==="o"?-1:1);
+        var d = {x: parseInt(field.getAttributeNS(null, 'x'), 10),
+                 y: parseInt(field.getAttributeNS(null, 'y'), 10),
+                 width: parseInt(field.getAttributeNS(null, 'width'), 10),
+                 height: parseInt(field.getAttributeNS(null, 'height'), 10)};
         player = Player.from_dict({type:t, name:i,
-                                   x:d.x+d.width*x_pos,
+                                   x:d.x+d.width*x_pos+x_rand,
                                    y:d.y+d.height/(num_players+1)*i});
         player.draw(this.canvas);
         this.players.push(player);
@@ -310,52 +314,48 @@
     _y: 0,
 
     get x() {
-      if (this.player) { return this.player.x; };
+      if (this.player) { return parseFloat(this.player.getAttribute('x')); };
       return this._x;
     },
 
     set x(val) {
       this._x = val;
-      if (this.player) { this.player.x = val; };
+      if (this.player) { this.player.setAttribute('x', val); };
     },
 
     get y() {
-      if (this.player) { return this.player.y; };
+      if (this.player) { return parseFloat(this.player.getAttribute('y')); };
       return this._y;
     },
 
     set y(val) {
       this._y = val;
-      if (this.player) { this.player.y = val; };
+      if (this.player) { this.player.setAttribute('y', val); };
     },
 
     // Draws the player on the stage
-    draw: function(stage){
+    draw: function(canvas){
+      // Create a group that holds the body and the label together.
+      this.player = g = create_element('g', {'x': this.x, 'y': this.y}, canvas);
+
       // Create a "body"
-      this.body = new createjs.Shape();
-      this.body.graphics.beginFill(this.color).drawCircle(0, 0, this.radius);
+      this.body = create_element('circle',
+                                   {
+                                     'cx':this.x, 'cy':this.y, 'r': this.radius,
+                                     'fill': this.color,
+                                   }, g);
 
-      // Add a label,
-      // FIXME: color should be selected based on our color (complementing?)
-      this.label = new createjs.Text(this.name, 'bold 10px Arial', 'green');
-      this.label.textAlign = "center";
-      this.label.y = -this.radius/1.4;
-
-      // Add the body and the label into a container
-      this.player = new createjs.Container();
-      this.player.x = this._x;
-      this.player.y = this._y;
-      this.player.addChild(this.body, this.label);
+      this.label = create_element('text',
+                                  {'x': (this.x - this.radius/2.5), 'y':this.y + this.radius/2.5, 'fill':'green',
+                                   'font-size': this.radius * 1.5,
+                                  }, g);
+      this.label.textContent = this.name;
 
       // Ability to drag the player around
       // FIXME: Should be a toggle-able feature!
-      this.player.addEventListener("mousedown", drag_object.bind(this));
+      g.addEventListener("mousedown", select_element.bind(this.player));
 
       // FIXME: Add a doubleclick handler to change the label.
-
-      // Add the player container onto the stage
-      stage.addChild(this.player);
-
       return this;
     },
 
@@ -398,17 +398,45 @@
 
   /****************************** UTILITY FUNCTIONS ******************************/
 
-  // Event listener to update position of an object on the stage on drag
-  var drag_object = function(evt) {
-    var offset = {x:evt.target.x-evt.stageX, y:evt.target.y-evt.stageY};
-    // add a handler to the event object's onMouseMove callback
-    // this will be active until the user releases the mouse button:
-    evt.addEventListener("mousemove",function(ev) {
-      ev.target.x = ev.stageX+offset.x;
-      ev.target.y = ev.stageY+offset.y;
-      ev.target.getStage().update();
+  // Event listener to select an element.
+  // Adds handlers for draggin and unselecting
+  // taken from: http://www.petercollingridge.co.uk/interactive-svg-components/draggable-svg-element
+  // FIXME: doesn't work as well as expected?
+  var select_element = function(evt) {
+    var selected_element = this, currentX = evt.clientX, currentY = evt.clientY;
+    var current_matrix = selected_element.getAttributeNS(null, 'transform');
+    current_matrix = current_matrix === ''?[1, 0, 0, 1, 0, 0]:current_matrix.slice(7, -1).split(' ');
+
+    for(var i=0, val; i<current_matrix.length; i++) {
+      val = parseFloat(current_matrix[i]);
+      if (!(typeof(val) === 'number') || isNaN(val)) {
+        current_matrix[i] = 0;
+      } else {
+        current_matrix[i] = val;
+      }
+    }
+
+    var move_element = function(ev) {
+      var offset = {dx: ev.clientX - currentX, dy: ev.clientY - currentY};
+      current_matrix[4] += offset.dx;
+      current_matrix[5] += offset.dy;
+      var new_matrix = "matrix(" + current_matrix.join(' ') + ")";
+      selected_element.setAttributeNS(null, "transform", new_matrix);
+      currentX = ev.clientX;
+      currentY = ev.clientY;
+    };
+
+    selected_element.addEventListener("mousemove", move_element);
+
+    selected_element.addEventListener("mouseout", function(ev) {
+      setTimeout(selected_element.removeEventListener('mousemove', move_element), 500);
     });
-  }
+
+    selected_element.addEventListener("mouseup", function(ev) {
+      selected_element.removeEventListener('mousemove', move_element);
+    });
+
+  };
 
   // FIXME: Add buttons, instead of ugly looking links.
   var add_download = function(game){
@@ -470,12 +498,13 @@
   };
 
   // Creates and adds an element of given type, with specified attributes to the given svg element.
-  var create_element = function(type, attr_dict, svg){
+  var create_element = function(type, attr_dict, parent){
     var elem = document.createElementNS(svgNS, type);
     for (var attr in attr_dict){
-      elem.setAttribute(attr, attr_dict[attr]);
+      elem.setAttributeNS(null, attr, attr_dict[attr]);
     };
-    svg.appendChild(elem);
+    parent.appendChild(elem);
+    return elem;
   };
 
 
