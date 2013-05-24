@@ -217,7 +217,6 @@
     this.states = states;
     this.current_state = 0;
     if (this.states) {this.reset_to_state(this.current_state)};
-    this.stage.update();
     return this;
   };
 
@@ -228,9 +227,8 @@
     this.current_state = state_index;
     this.players.forEach(function(player, idx){
       player.update(state.players[idx]);
-    });
+    }, this);
     // this.disc.update(state.disc);
-    this.stage.update();
     return this;
   };
 
@@ -312,6 +310,7 @@
     color: "green",
     _x: 0,
     _y: 0,
+    _transform: "matrix(1 0 0 1 0 0)",
 
     get x() {
       if (this.player) { return parseFloat(this.player.getAttribute('x')); };
@@ -333,9 +332,20 @@
       if (this.player) { this.player.setAttribute('y', val); };
     },
 
+    get transform() {
+      if (this.player) { return this.player.getAttributeNS(null, 'transform') };
+      return this._transform;
+    },
+
+    set transform(val) {
+      this._transform = val;
+      if (this.player) { return this.player.setAttribute('transform', val) };
+    },
+
     // Draws the player on the stage
     draw: function(canvas){
       // Create a group that holds the body and the label together.
+      var g;
       this.player = g = create_element('g', {'x': this.x, 'y': this.y}, canvas);
 
       // Create a "body"
@@ -361,7 +371,13 @@
 
     // Return state variables to reconstruct the player
     to_dict: function(){
-      return {type:this.type, name:this.name, radius: this.radius, x: this.x, y: this.y};
+      return { type:this.type,
+               name:this.name,
+               radius: this.radius,
+               x: this.x,
+               y: this.y,
+               transform: this.transform,
+             };
     },
 
     from_dict: function(state) {
