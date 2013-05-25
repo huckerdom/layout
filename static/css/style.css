@@ -1,0 +1,68 @@
+/* Global */
+body {
+    font-family: Helvetica, serif;
+}
+
+section {
+    margin-bottom: 2000px;
+    padding-top: 100px;
+}
+
+h1 {
+    font-family: lonestar;
+    font-size: 40px;
+    color: rgb(41, 35, 30);
+    width: 100%;
+    margin: 0px;
+    padding: 0px;
+}
+
+/* Navigation Bar */
+#navbar {
+    position: fixed;
+    top: 0px;
+    height: 100px;
+    width: 100%;
+    z-index: 200;
+    background: black;
+    text-align: center;
+}
+
+#menu {
+    text-align: center;
+    width: 100%;
+    height: 50px;
+    padding-top: 25px;
+    z-index: 30;
+    position: relative;
+}
+#menu ul {
+    margin: 0px;
+    padding-bottom: 5px;
+    border: 0px solid #F63;
+}
+#menu li {
+    list-style-type: none;
+    display: inline;
+}
+#menu a {
+    text-decoration: none;
+    letter-spacing: -3px;
+    font-size: 28px;
+    color: rgb(209, 182, 153);
+    padding-right: 16px;
+    padding-left: 16px;
+    font-weight: normal;
+}
+#menu a:hover {
+    color: #FFF;
+    position: relative;
+    top: -3px; right: -3px;
+}
+
+/* Content */
+#content {
+    position: relative;
+    width: 80%;
+    margin-left: 10%;
+}

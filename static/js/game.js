@@ -40,6 +40,8 @@
       ];
     }
 
+    // FIXME: Load <link rel="STYLESHEET" href="static/css/game.css" type="text/css">
+
     for (var i=0; i<scripts.length; i++) {
       var newScript = document.createElement('script');
       newScript.type = 'text/javascript';

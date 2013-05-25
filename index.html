@@ -2,9 +2,45 @@
 <html>
   <head>
     <script src="static/js/game.js"></script>
-    <link rel="STYLESHEET" href="static/css/game.css" type="text/css">
+    <link rel="stylesheet" href="static/css/style.css" type="text/css">
   </head>
   <body>
-    <div class="layout" width="1200" height="600" data-layout-file="static/data/layout.txt"></div>
+
+    <!-- navigation -->
+    <div id="navbar">
+      <div id="menu">
+        <ul>
+          <li><a href="#about">About</a></li>
+          <li><a href="#demo">Demo</a></li>
+          <li><a href="#embed">Embed</a></li>
+        </ul>
+      </div>
+    </div>
+
+
+    <!-- content -->
+    <div id="content">
+
+      <section id="about">
+        <h1>About</h1>
+        <div class="about">
+          <p></p>
+        </div>
+      </section>
+
+      <section id="demo">
+        <h1>Demo</h1>
+        <div class="layout" width="1200" height="600" data-layout-file="static/data/layout.txt"></div>
+      </section>
+
+      <section id="embed">
+        <h1>Embed</h1>
+        <div class="embed">
+          <p></p>
+        </div>
+      </section>
+
+    </div>
+
   </body>
 </html>
