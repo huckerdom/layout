@@ -1,5 +1,7 @@
 (function () {
 
+  "use strict";
+
   var DIMENSIONS = {
     length: 100,
     breadth: 37,
@@ -25,10 +27,19 @@
   // Initialize game.js
   Game.init = function(){
     var head = document.getElementsByTagName("head")[0];
-    scripts = [
-      //'http://code.jquery.com/jquery-1.9.1.min.js',
-      // 'http://code.createjs.com/createjs-2013.02.12.min.js',
-    ];
+    if (navigator && navigator.onLine) {
+      var scripts = [
+        'https://raw.github.com/DmitryBaranovskiy/raphael/master/raphael-min.js',
+        'http://code.jquery.com/jquery-1.9.1.min.js',
+        ];
+    } else {
+      var scripts = [
+        // Use local files when not connected to the internet
+        'static/js/jquery-1.9.1.min.js',
+        'static/js/raphael-min.js',
+      ];
+    }
+
     for (var i=0; i<scripts.length; i++) {
       var newScript = document.createElement('script');
       newScript.type = 'text/javascript';
@@ -36,41 +47,58 @@
       head.appendChild(newScript);
     };
 
-    // Wait for the page to load, before going ahead
-    window.onload = Game.create_instances;
+    // Wait for the javascript to load, before going ahead
+    var count = 0;
+    var load_game = function(){
+      if (window.Raphael && window.jQuery) {
+        Game.create_instances();
+      } else {
+        count+=1;
+        console.log('Waiting for additional js to load... ');
+        if (count>=60){
+          alert('Failed to load js!');
+          return;
+        }
+        setTimeout(load_game, 500);
+
+      }
+    };
+
+    Window.onload = load_game();
 
   };
 
   // Create games for each canvas
   Game.create_instances = function() {
-    //var canvases = d('svg[class~=layout]'), game;
-    var canvases = document.getElementsByTagName('svg'), game;
+    var canvases = $('div[class~=layout]'), game;
+    // var canvases = document.getElementsByTagName('svg'), game;
     // For each canvas, look at the data file and do shit!
     for (var i=0; i<canvases.length; i++) {
-      game = Object.create(Game);
+      var game = Object.create(Game);
       game.players = [];
       game.states = [];
-      game.canvas = canvases[i];
+      game.canvas = Raphael(canvases[i],
+                            canvases[i].getAttributeNS(null, 'width'),
+                            canvases[i].getAttributeNS(null, 'height'));
       Game.instances.push(game);
       game.init_game();
     }
 
-  }
+  };
 
   // Initial setup for a game instance
   Game.init_game = function() {
-
     // Setup the canvas to have a field and default player objects.
     this.init_setup_field();
     this.init_setup_players();
 
     // Read layout file from data-layout attribute on canvas
-    //this.read_layout_file();
+    this.read_layout_file();
 
     // Add buttons and other stuff
-    // this.add_UI();
+    this.add_UI();
 
-  }
+  };
 
   /* Lots of Cleanup needed here!
      // FIXME: Add a legend for player colors
@@ -81,98 +109,63 @@
     scale = scale || 10;
 
     var length = DIMENSIONS.length * scale, breadth = DIMENSIONS.breadth * scale;
-    var x = (this.canvas.getAttributeNS(null, 'width') - length)/2,
-        y = (this.canvas.getAttributeNS(null, 'height') - breadth)/2;
+    var x = (this.canvas.width - length)/2,
+        y = (this.canvas.height - breadth)/2;
+
     var b = DIMENSIONS.boundary * scale;
 
-    // Draw extra outer zone
-    create_element('rect',
-                   {
-                     'x': x-b/2, 'y': y-b/2,
-                     'width': length+b, 'height': breadth+b,
-                     'stroke': '#00aa00', 'stroke-width': b
-                   }, this.canvas);
-
     // Draw field
-    create_element('rect',
-                   {
-                     'id': 'field',
-                     'width': length, 'height': breadth,
-                     'x': x, 'y': y, 'fill': 'green',
-                     'stroke': '#ffffff', 'stroke-width': DIMENSIONS.line_width*scale,
-                   }, this.canvas);
+    var field = this.canvas.rect(x, y, length, breadth)
+      .attr({'id': 'field', 'fill': 'green',
+             'stroke': '#ffffff', 'stroke-width': DIMENSIONS.line_width*scale,
+            });
+    this._field_id = field.id;
+
+    // Draw extra outer zone
+    this.canvas.rect(x-b/2, y-b/2, length+b, breadth+b).attr({'stroke': '#00aa00', 'stroke-width': b});
+
 
     // Draw end zone lines
-    create_element('line',
-                   {
-                     'x1': x + DIMENSIONS.end_zones[0]*scale, 'y1': y,
-                     'x2': x + DIMENSIONS.end_zones[0]*scale, 'y2': y + breadth,
-                     'stroke': 'white', 'stroke-width': DIMENSIONS.line_width*scale,
-                     'class': 'field-lines',
-                   }, this.canvas);
+    var lines = "M" + (x + DIMENSIONS.end_zones[0]*scale) + "," + y +
+                "L" + (x + DIMENSIONS.end_zones[0]*scale) + "," + (y+breadth) +
+                "M" + (x + DIMENSIONS.end_zones[1]*scale) + "," + y +
+                "L" + (x + DIMENSIONS.end_zones[1]*scale) + "," + (y+breadth);
 
-    create_element('line',
-                   {
-                     'x1': x + DIMENSIONS.end_zones[1]*scale, 'y1': y,
-                     'x2': x + DIMENSIONS.end_zones[1]*scale, 'y2': y+breadth,
-                     'stroke': 'white', 'stroke-width': DIMENSIONS.line_width*scale,
-                     'class': 'field-lines',
-                     }, this.canvas);
+    this.canvas.path(lines).attr({'stroke': 'white', 'stroke-width': DIMENSIONS.line_width*scale});
 
     // Draw brick marks
-    var c = DIMENSIONS.player_radius/2
+    var c = DIMENSIONS.player_radius/2;
 
-    // Left brick
-    create_element('line',
-                   {
-                     'x1': x + DIMENSIONS.bricks[0]*scale - c, 'y1': y + breadth/2 - c,
-                     'x2': x + DIMENSIONS.bricks[0]*scale + c, 'y2': y + breadth/2 + c,
-                     'stroke': 'white', 'stroke-width': DIMENSIONS.line_width*scale,
-                     'class': 'field-lines',
-                   }, this.canvas);
-    create_element('line',
-                   {
-                     'x1': x + DIMENSIONS.bricks[0]*scale - c, 'y1': y + breadth/2 + c,
-                     'x2': x + DIMENSIONS.bricks[0]*scale + c, 'y2': y + breadth/2 - c,
-                     'stroke': 'white', 'stroke-width': DIMENSIONS.line_width*scale,
-                     'class': 'field-lines',
-                   }, this.canvas);
+    var bricks = "M" + (x + DIMENSIONS.bricks[0]*scale - c) + "," + (y + breadth/2 - c) +
+                 "L" + (x + DIMENSIONS.bricks[0]*scale + c) + "," + (y + breadth/2 + c) +
+                 "M" + (x + DIMENSIONS.bricks[0]*scale - c) + "," + (y + breadth/2 + c) +
+                 "L" + (x + DIMENSIONS.bricks[0]*scale + c) + "," + (y + breadth/2 - c) +
 
-    // Right brick
-    create_element('line',
-                   {
-                     'x1': x + DIMENSIONS.bricks[1]*scale - c, 'y1': y + breadth/2 - c,
-                     'x2': x + DIMENSIONS.bricks[1]*scale + c, 'y2': y + breadth/2 + c,
-                     'stroke': 'white', 'stroke-width': DIMENSIONS.line_width*scale,
-                     'class': 'field-lines',
-                   }, this.canvas);
-    create_element('line',
-                   {
-                     'x1': x + DIMENSIONS.bricks[1]*scale - c, 'y1': y + breadth/2 + c,
-                     'x2': x + DIMENSIONS.bricks[1]*scale + c, 'y2': y + breadth/2 - c,
-                     'stroke': 'white', 'stroke-width': DIMENSIONS.line_width*scale,
-                     'class': 'field-lines',
-                   }, this.canvas);
+                 "M" + (x + DIMENSIONS.bricks[1]*scale - c) + "," + (y + breadth/2 - c) +
+                 "L" + (x + DIMENSIONS.bricks[1]*scale + c) + "," + (y + breadth/2 + c) +
+                 "M" + (x + DIMENSIONS.bricks[1]*scale - c) + "," + (y + breadth/2 + c) +
+                 "L" + (x + DIMENSIONS.bricks[1]*scale + c) + "," + (y + breadth/2 - c);
+
+    this.canvas.path(bricks).attr({'stroke': 'white', 'stroke-width': DIMENSIONS.line_width*scale});
 
   };
 
   // Sets up the players
   Game.init_setup_players = function(num_players) {
     num_players = num_players || 7;
-    var field = this.canvas.getElementById('field');
+    var field = this.canvas.getById(this._field_id||0);
 
     // Setup players;
     for (var i=1; i<=num_players; i++) {
       for (var t in {o:null, d:null}){
         var x_pos = t==="o"?.18:.82;
         var x_rand = Math.random() * DIMENSIONS.player_radius * 2 * (t==="o"?-1:1);
-        var d = {x: parseInt(field.getAttributeNS(null, 'x'), 10),
-                 y: parseInt(field.getAttributeNS(null, 'y'), 10),
-                 width: parseInt(field.getAttributeNS(null, 'width'), 10),
-                 height: parseInt(field.getAttributeNS(null, 'height'), 10)};
-        player = Player.from_dict({type:t, name:i,
+        var d = {x: field.attrs.x, y: field.attrs.y,
+                 width: field.attrs.width, height: field.attrs.height};
+        var player = Player.from_dict({type:t, name:i,
                                    x:d.x+d.width*x_pos+x_rand,
                                    y:d.y+d.height/(num_players+1)*i});
+        // FIXME: drawing shit needs to be fixed.
         player.draw(this.canvas);
         this.players.push(player);
       };
@@ -235,31 +228,22 @@
   Game.animate = function(fps, start, end){
     if ( !this.players.length || !this.states.length ) { return; };
     fps = fps||24;
-    start = start || 0;
-    end = end || this.states.length;
-    this.reset_to_state(start);
-    createjs.Ticker.setFPS(fps);
-    createjs.Ticker.addEventListener("tick", this.stage);
-    var tweens = [], labels = [];
+    start = start || this.current_state < (this.states.length-1) && this.current_state || 0;
+    end = start+1;
+    if (start != this.current_state) { this.reset_to_state(start) };
     this.players.forEach(function(player, i){
-      var tween = createjs.Tween.get(player);
-      this.states.forEach(function(state, j){
-        // Skip adding the first state to animation
-        if (j <= start || j >= end) {return;};
-        tween.to(state.players[i], fps*2).call(function(){this.current_state=j}, null, this)
-          .wait(fps);
-        tweens.push(tween);
-      }, this);
+      var state = this.states[end].players[i];
+      player.animate(state);
     }, this);
-    this.timeline = new createjs.Timeline(tweens, labels, {useTicks:true, paused: true});
-    this.stage.update();
-    this.timeline.setPaused(false);
+    this.current_state += 1;
+    this.current_state = this.current_state < this.states.length && this.current_state || 0;
   };
 
+
   Game.read_layout_file = function(){
-    var layout_file = this.stage.canvas.dataset.layoutFile;
+    var layout_file = this.canvas.canvas.parentElement.dataset.layoutFile;
     if (layout_file == undefined) { return; }
-    game = this;
+    var game = this;
     var read_layout = $.get(layout_file, function(data){
       game.update(data);
     });
@@ -310,60 +294,42 @@
     color: "green",
     _x: 0,
     _y: 0,
-    _transform: "matrix(1 0 0 1 0 0)",
 
     get x() {
-      if (this.player) { return parseFloat(this.player.getAttribute('x')); };
+      if (this.label) { return this.label.attr('x'); };
       return this._x;
     },
 
     set x(val) {
       this._x = val;
-      if (this.player) { this.player.setAttribute('x', val); };
+      if (this.label) {this.label.attr({x: val})};
+      if (this.body) {this.body.attr({cx: val})};
     },
 
     get y() {
-      if (this.player) { return parseFloat(this.player.getAttribute('y')); };
+      if (this.label) { return this.label.attr('y'); };
       return this._y;
     },
 
     set y(val) {
       this._y = val;
-      if (this.player) { this.player.setAttribute('y', val); };
-    },
-
-    get transform() {
-      if (this.player) { return this.player.getAttributeNS(null, 'transform') };
-      return this._transform;
-    },
-
-    set transform(val) {
-      this._transform = val;
-      if (this.player) { return this.player.setAttribute('transform', val) };
+      if (this.label) {this.label.attr({y: val})};
+      if (this.body) {this.body.attr({cy: val})};
     },
 
     // Draws the player on the stage
     draw: function(canvas){
-      // Create a group that holds the body and the label together.
-      var g;
-      this.player = g = create_element('g', {'x': this.x, 'y': this.y}, canvas);
-
       // Create a "body"
-      this.body = create_element('circle',
-                                   {
-                                     'cx':this.x, 'cy':this.y, 'r': this.radius,
-                                     'fill': this.color,
-                                   }, g);
+      this.body = canvas.circle(this.x, this.y, this.radius).attr({'fill': this.color});
 
-      this.label = create_element('text',
-                                  {'x': (this.x - this.radius/2.5), 'y':this.y + this.radius/2.5, 'fill':'green',
-                                   'font-size': this.radius * 1.5,
-                                  }, g);
-      this.label.textContent = this.name;
+      this.label = canvas.text(this.x, this.y, this.name)
+        .attr({'fill':'green', 'font-size': (this.radius * 1.5)});
 
+      // Create a group that holds the body and the label together.
       // Ability to drag the player around
       // FIXME: Should be a toggle-able feature!
-      g.addEventListener("mousedown", select_element.bind(this.player));
+      canvas.set(this.body, this.label).drag(drag_player_move, drag_player_start, null,
+                                             this, this);
 
       // FIXME: Add a doubleclick handler to change the label.
       return this;
@@ -399,7 +365,17 @@
       for (var e in state) {
         this[e] = state[e];
       };
-    }
+    },
+
+    animate: function(new_state, time) {
+      time = time||2000;
+      // Update body and label
+      new_state.cx = new_state.x;
+      new_state.cy = new_state.y;
+      var anim = Raphael.animation(new_state, time);
+      this.body.animate(anim);
+      this.label.animateWith(this.label, anim, anim);
+    },
 
   }
 
@@ -414,51 +390,23 @@
 
   /****************************** UTILITY FUNCTIONS ******************************/
 
-  // Event listener to select an element.
-  // Adds handlers for draggin and unselecting
-  // taken from: http://www.petercollingridge.co.uk/interactive-svg-components/draggable-svg-element
-  // FIXME: doesn't work as well as expected?
-  var select_element = function(evt) {
-    var selected_element = this, currentX = evt.clientX, currentY = evt.clientY;
-    var current_matrix = selected_element.getAttributeNS(null, 'transform');
-    current_matrix = current_matrix === ''?[1, 0, 0, 1, 0, 0]:current_matrix.slice(7, -1).split(' ');
+  // Start dragging a player
+  var drag_player_start =  function(){
+    this._ox = this.body.attr('cx');
+    this._oy = this.body.attr('cy');
+  };
 
-    for(var i=0, val; i<current_matrix.length; i++) {
-      val = parseFloat(current_matrix[i]);
-      if (!(typeof(val) === 'number') || isNaN(val)) {
-        current_matrix[i] = 0;
-      } else {
-        current_matrix[i] = val;
-      }
-    }
-
-    var move_element = function(ev) {
-      var offset = {dx: ev.clientX - currentX, dy: ev.clientY - currentY};
-      current_matrix[4] += offset.dx;
-      current_matrix[5] += offset.dy;
-      var new_matrix = "matrix(" + current_matrix.join(' ') + ")";
-      selected_element.setAttributeNS(null, "transform", new_matrix);
-      currentX = ev.clientX;
-      currentY = ev.clientY;
-    };
-
-    selected_element.addEventListener("mousemove", move_element);
-
-    selected_element.addEventListener("mouseout", function(ev) {
-      setTimeout(selected_element.removeEventListener('mousemove', move_element), 500);
-    });
-
-    selected_element.addEventListener("mouseup", function(ev) {
-      selected_element.removeEventListener('mousemove', move_element);
-    });
-
+  // Drag and move the player around
+  var drag_player_move = function(dx, dy){
+    this.body.attr({cx: this._ox + dx, cy:this._oy + dy});
+    this.label.attr({x: this._ox + dx, y:this._oy + dy});
   };
 
   // FIXME: Add buttons, instead of ugly looking links.
   var add_download = function(game){
     window.URL = window.URL || window.webkitURL;
     var download = $('<a>').attr('id', 'saveGame').text('Save Game')
-      .insertAfter(game.stage.canvas).attr('href', '#').css('display', 'block');
+      .insertAfter(game.canvas.canvas).attr('href', '#').css('display', 'block');
 
     download.click(function(evt){
       var blob = new Blob([game.save_game()], {type: 'text/plain'});
@@ -472,32 +420,32 @@
   var add_upload = function(game){
     var upload_button = $('<input type=file>').attr('id', 'upload-game-file')
       .attr('accept', 'text/plain').css('display', 'none')
-      .insertAfter(game.stage.canvas).attr('href', '#')
+      .insertAfter(game.canvas.canvas).attr('href', '#')
       .change(function(evt){
         read_game_files(evt, game);
       });
 
     $('<a>').attr('id', 'loadGame').text('Load Game')
-      .insertAfter(game.stage.canvas).attr('href', '#').css('display', 'block')
+      .insertAfter(game.canvas.canvas).attr('href', '#').css('display', 'block')
       .click(function(evt){upload_button.click()})
 
   }
 
   var add_capture = function(game){
     $('<a>').attr('id', 'captureGameState').text('Capture Game State').css('display', 'block')
-      .insertAfter(game.stage.canvas).attr('href', '#')
+      .insertAfter(game.canvas.canvas).attr('href', '#')
       .click(function(evt){game.capture_state()});
   }
 
   var add_clear_states = function(game){
     $('<a>').attr('id', 'clearGameStates').text('Clear All Game States').css('display', 'block')
-      .insertAfter(game.stage.canvas).attr('href', '#')
+      .insertAfter(game.canvas.canvas).attr('href', '#')
       .click(function(evt){game.clear_states()});
   }
 
   var add_animate = function(game){
-    $('<a>').attr('id', 'animateGame').text('Animate Game').css('display', 'block')
-      .insertAfter(game.stage.canvas).attr('href', '#')
+    $('<a>').attr('id', 'stepForward').text('Step forward').css('display', 'block')
+      .insertAfter(game.canvas.canvas).attr('href', '#')
       .click(function(evt){game.animate()});
   }
 
