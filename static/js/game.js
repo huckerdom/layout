@@ -57,7 +57,7 @@
       } else {
         count+=1;
         console.log('Waiting for additional js to load... ');
-        if (count>=60){
+        if (count>=240){
           alert('Failed to load js!');
           return;
         }
@@ -73,7 +73,8 @@
   // Create games for each canvas
   Game.create_instances = function() {
     var canvases = $('div[class~=layout]'), game;
-    // var canvases = document.getElementsByTagName('svg'), game;
+    // FIXME: we could add text/gif while waiting for js to load, which is removed on load.
+
     // For each canvas, look at the data file and do shit!
     for (var i=0; i<canvases.length; i++) {
       var game = Object.create(Game);
