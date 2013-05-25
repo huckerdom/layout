@@ -225,20 +225,37 @@
     return this;
   };
 
-  Game.animate = function(fps, start, end){
+  Game.animate = function(fps, start, loop){
+    // FIXME: Add a flag for already animating and don't start another animation if already animating
+    // FIXME: Check paused flag and resume
     if ( !this.players.length || !this.states.length ) { return; };
     fps = fps||24;
-    start = start || this.current_state < (this.states.length-1) && this.current_state || 0;
-    end = start+1;
+    start = start < (this.states.length-1) && start ||
+            this.current_state < (this.states.length-1) && this.current_state || 0;
+    var end = start+1;
     if (start != this.current_state) { this.reset_to_state(start) };
     this.players.forEach(function(player, i){
       var state = this.states[end].players[i];
-      player.animate(state);
+      if (loop && i == 0) {
+        var callback = Game.animate.bind(this, fps, start+1, loop);
+        player.animate(state, null, callback);
+      } else {
+        player.animate(state);
+      }
     }, this);
     this.current_state += 1;
     this.current_state = this.current_state < this.states.length && this.current_state || 0;
   };
 
+  // Stop or pause animation
+  Game.stop = function(pause){
+    // FIXME: Add a flag for paused state somewhere
+    pause = pause || false;
+    this.players.forEach(function(player, i){
+      player.stop(pause);
+    }, this);
+    this.reset_to_state(this.current_state);
+  };
 
   Game.read_layout_file = function(){
     var layout_file = this.canvas.canvas.parentElement.dataset.layoutFile;
@@ -261,6 +278,8 @@
     add_upload(this);
     add_capture(this);
     add_clear_states(this);
+    add_forward(this);
+    add_stop_animation(this);
     add_animate(this);
   }
 
@@ -367,14 +386,26 @@
       };
     },
 
-    animate: function(new_state, time) {
+    animate: function(new_state, time, cb) {
       time = time||2000;
       // Update body and label
       new_state.cx = new_state.x;
       new_state.cy = new_state.y;
-      var anim = Raphael.animation(new_state, time);
-      this.body.animate(anim);
-      this.label.animateWith(this.label, anim, anim);
+      var anim = Raphael.animation(new_state, time, 'linear', cb);
+      this.label.animate(anim);
+      this.body.animateWith(this.label, anim, new_state, time);
+    },
+
+    stop: function(pause) {
+      pause = pause||false;
+      // Stop animating body and label
+      if (pause) {
+        this.label.pause();
+        this.body.pause();
+      } else {
+        this.label.stop();
+        this.body.stop();
+      }
     },
 
   }
@@ -444,6 +475,18 @@
   }
 
   var add_animate = function(game){
+    $('<a>').attr('id', 'animateLoop').text('Animate (Loop)').css('display', 'block')
+      .insertAfter(game.canvas.canvas).attr('href', '#')
+      .click(function(evt){game.animate(null, null, true)});
+  }
+
+  var add_stop_animation = function(game){
+    $('<a>').attr('id', 'stopAnimateLoop').text('Stop Animation').css('display', 'block')
+      .insertAfter(game.canvas.canvas).attr('href', '#')
+      .click(function(evt){game.stop()});
+  }
+
+  var add_forward = function(game){
     $('<a>').attr('id', 'stepForward').text('Step forward').css('display', 'block')
       .insertAfter(game.canvas.canvas).attr('href', '#')
       .click(function(evt){game.animate()});
