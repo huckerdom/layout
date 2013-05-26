@@ -99,7 +99,7 @@
     this.read_layout_file();
 
     // Add buttons and other stuff
-    this.add_UI();
+    add_UI(this);
 
   };
 
@@ -275,18 +275,6 @@
     this.states = [];
   };
 
-  Game.add_UI = function() {
-    // Do miscellaneous UI stuff
-    add_download(this);
-    add_upload(this);
-    add_capture(this);
-    add_clear_states(this);
-    add_forward(this);
-    add_stop_animation(this);
-    add_animate(this);
-  }
-
-
   /********************************************************************************/
 
   // Disc class
@@ -436,64 +424,69 @@
     this.label.attr({x: this._ox + dx, y:this._oy + dy});
   };
 
-  // FIXME: Add buttons, instead of ugly looking links.
-  var add_download = function(game){
-    window.URL = window.URL || window.webkitURL;
-    var download = $('<a>').attr('id', 'saveGame').text('Save Game')
-      .insertAfter(game.canvas.canvas).attr('href', '#').css('display', 'block');
 
+  var add_UI = function(game) {
+    var container = $(game.canvas.canvas.parentElement);
+    var ui_div = $('<div>').addClass('button-container').appendTo(container);
+
+    // Download button
+    window.URL = window.URL || window.webkitURL;
+    var download_link = $('<a>');
+    var download_img = $('<img>').attr('src', 'static/img/download.png').appendTo(download_link)
+      .attr('title', 'Download Game');
+    var download = $('<button>').attr('id', 'saveGame').append(download_link).appendTo(ui_div);
     download.click(function(evt){
       var blob = new Blob([game.save_game()], {type: 'text/plain'});
       var d = new Date(), date = d.getDate(), month = d.getMonth() + 1, year = d.getFullYear();
-      $(evt.target).attr("href", window.URL.createObjectURL(blob))
+      download_link.attr("href", window.URL.createObjectURL(blob))
         .attr("download", "layout-" + year + '-' + month + '-' + date + ".txt");
     });
 
-  }
-
-  var add_upload = function(game){
+    // Upload button
     var upload_button = $('<input type=file>').attr('id', 'upload-game-file')
       .attr('accept', 'text/plain').css('display', 'none')
       .insertAfter(game.canvas.canvas).attr('href', '#')
       .change(function(evt){
         read_game_files(evt, game);
       });
+    var load_img = $('<img>').attr('src', 'static/img/load.png')
+      .attr('title', 'Load Game');
+    $('<button>').attr('id', 'loadGame').append(load_img)
+      .appendTo(ui_div).click(function(evt){upload_button.click()})
 
-    $('<a>').attr('id', 'loadGame').text('Load Game')
-      .insertAfter(game.canvas.canvas).attr('href', '#').css('display', 'block')
-      .click(function(evt){upload_button.click()})
 
-  }
-
-  var add_capture = function(game){
-    $('<a>').attr('id', 'captureGameState').text('Capture Game State').css('display', 'block')
-      .insertAfter(game.canvas.canvas).attr('href', '#')
+    // Capture state
+    var capture_img = $('<img>').attr('src', 'static/img/capture.png')
+      .attr('title', 'Capture State');
+    $('<button>').attr('id', 'captureGameState').appendTo(ui_div).append(capture_img)
       .click(function(evt){game.capture_state()});
-  }
 
-  var add_clear_states = function(game){
-    $('<a>').attr('id', 'clearGameStates').text('Clear All Game States').css('display', 'block')
-      .insertAfter(game.canvas.canvas).attr('href', '#')
+    // Clear all game states
+    var clear_img = $('<img>').attr('src', 'static/img/clear.png')
+      .attr('title', 'Clear All Game States');
+    $('<button>').attr('id', 'clearGameStates').append(clear_img).appendTo(ui_div)
       .click(function(evt){game.clear_states()});
-  }
 
-  var add_animate = function(game){
-    $('<a>').attr('id', 'animateLoop').text('Animate (Loop)').css('display', 'block')
-      .insertAfter(game.canvas.canvas).attr('href', '#')
+    // Animate game
+    var anim_img = $('<img>').attr('src', 'static/img/animate.png')
+      .attr('title', 'Animate (Loop)');
+    $('<button>').attr('id', 'animateLoop').appendTo(ui_div).append(anim_img)
       .click(function(evt){game.animate(null, null, true)});
-  }
 
-  var add_stop_animation = function(game){
-    $('<a>').attr('id', 'stopAnimateLoop').text('Stop Animation').css('display', 'block')
-      .insertAfter(game.canvas.canvas).attr('href', '#')
+    // Stop animation
+    var stop_img = $('<img>').attr('src', 'static/img/stop.png')
+      .attr('title', 'Stop Animation');
+    $('<button>').attr('id', 'stopAnimateLoop').appendTo(ui_div).append(stop_img)
       .click(function(evt){game.stop()});
-  }
 
-  var add_forward = function(game){
-    $('<a>').attr('id', 'stepForward').text('Step forward').css('display', 'block')
-      .insertAfter(game.canvas.canvas).attr('href', '#')
+    // Step forward
+    var fwd_img = $('<img>').attr('src', 'static/img/forward.png').attr('title', 'Step forward');
+    $('<button>').attr('id', 'stepForward').appendTo(ui_div).append(fwd_img)
       .click(function(evt){game.animate()});
-  }
+
+    // Step backward
+
+  };
 
   var read_game_files = function(evt, game){
     var file = evt.target.files[0];

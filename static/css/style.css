@@ -78,3 +78,7 @@ h5 {
     margin-bottom: 2000px;
     padding-top: 100px;
 }
+
+.button-container button img{
+    height: 26px;
+}
