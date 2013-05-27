@@ -44,7 +44,6 @@
 
     ];
 
-
     document.onreadystatechange = function(){
 
       var initialize = function(){
@@ -64,6 +63,10 @@
       // Wait for all other js (and images!) to finish loading..
       // Load those libraries which aren't already loaded
       if (document.readyState === "complete" && !Game.initialized) {
+
+        // If all the libraries are already loaded
+        initialize();
+
         scripts.forEach(function(script){
           if (eval(script.window_object) == undefined) {
             console.log('Loading ' + script.name);
@@ -75,7 +78,8 @@
             newScript.onreadystatechange = initialize;
           };
         });
-      }
+
+      };
 
     };
 
