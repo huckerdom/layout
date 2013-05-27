@@ -20,58 +20,73 @@
     states: [],
     players: [],
     instances: [],
-    canvas: null  // SVG element
+    canvas: null,  // SVG element
+    initialized: false,
   };
 
 
   // Initialize game.js
   Game.init = function(){
     var head = document.getElementsByTagName("head")[0];
-    if (navigator && navigator.onLine) {
-      var scripts = [
-        'https://raw.github.com/DmitryBaranovskiy/raphael/master/raphael-min.js',
-        'http://code.jquery.com/jquery-1.9.1.min.js',
-        ];
-    } else {
-      var scripts = [
-        // Use local files when not connected to the internet
-        'static/js/jquery-1.9.1.min.js',
-        'static/js/raphael-min.js',
-      ];
-    }
+    var scripts = [
+
+      {
+        name: 'raphael.js',
+        url: 'https://raw.github.com/DmitryBaranovskiy/raphael/master/raphael-min.js',
+        window_object: 'window.Raphael',
+      },
+
+      {
+        name: 'jquery.js',
+        url: 'http://code.jquery.com/jquery-1.9.1.min.js',
+        window_object: 'window.jQuery',
+      }
+
+    ];
+
+
+    document.onreadystatechange = function(){
+
+      var initialize = function(){
+        var done = true;
+
+        scripts.forEach(function(script){
+          if (eval(script.window_object) == undefined) {
+            done = false;
+          };
+        });
+
+        if (done) { Game.create_instances() };
+
+      };
+
+      console.log(document.readyState, window.Raphael, window.jQuery);
+      // Wait for all other js (and images!) to finish loading..
+      // Load those libraries which aren't already loaded
+      if (document.readyState === "complete" && !Game.initialized) {
+        scripts.forEach(function(script){
+          if (eval(script.window_object) == undefined) {
+            console.log('Loading ' + script.name);
+            var newScript = document.createElement('script');
+            newScript.type = 'text/javascript';
+            newScript.src = script.url;
+            head.appendChild(newScript);
+            newScript.onload = initialize;
+            newScript.onreadystatechange = initialize;
+          };
+        });
+      }
+
+    };
 
     // FIXME: Load <link rel="STYLESHEET" href="static/css/game.css" type="text/css">
-
-    for (var i=0; i<scripts.length; i++) {
-      var newScript = document.createElement('script');
-      newScript.type = 'text/javascript';
-      newScript.src = scripts[i] ;
-      head.appendChild(newScript);
-    };
-
-    // Wait for the javascript to load, before going ahead
-    var count = 0;
-    var load_game = function(){
-      if (window.Raphael && window.jQuery) {
-        Game.create_instances();
-      } else {
-        count+=1;
-        console.log('Waiting for additional js to load... ');
-        if (count>=240){
-          alert('Failed to load js!');
-          return;
-        }
-        setTimeout(load_game, 500);
-
-      }
-    };
-
-    Window.onload = load_game();
 
   };
 
   // Create games for each canvas
   Game.create_instances = function() {
+    Game.initialized = true;
+
     var canvases = $('div[class~=layout]'), game;
     // FIXME: we could add text/gif while waiting for js to load, which is removed on load.
 
