@@ -505,6 +505,33 @@
 
     // Step backward
 
+    // Help dialog
+    var help_img = $('<img>').attr('src', 'static/img/help.png').attr('title', 'Show Help');
+
+    // FIXME: Append close button...
+    // content of the help dialog
+    var content = $('<div>').attr('id', 'help-content').css('display', 'none').appendTo(container);
+    var button_table = $('<table>').attr('id', 'help-button-list').appendTo(content);
+    $('img', ui_div).each(function(idx, el){
+      var row = $('<tr>').append($('<td>').append($(el).clone()))
+        .append($('<td>').text($(el).attr('title')));
+      button_table.append(row);
+    });
+
+    var toggle_help = function(evt){
+      var display = content.css('display');
+      content.css('display', display=='none'?'block':'none');
+    };
+
+    var dlg_close = $('<button>').text('x').click(toggle_help).css('right', '0px').css('top', '0px')
+      .css('position', 'absolute');
+    var row = $('<tr>').append($('<td>'))
+      .append($('<td>').append(dlg_close))
+      .appendTo(button_table);
+
+
+    $('<button>').attr('id', 'showHideHelp').appendTo(ui_div).append(help_img)
+      .click(toggle_help);
   };
 
   var read_game_files = function(evt, game){

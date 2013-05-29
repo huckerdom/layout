@@ -82,3 +82,12 @@ h5 {
 .button-container button img{
     height: 26px;
 }
+
+#help-content {
+    position: fixed;
+    left: 40%;
+    top: 100px;
+    z-index: 1000;
+    background: lightgray;
+    border: solid;
+}
