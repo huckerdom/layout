@@ -97,11 +97,12 @@
     // For each canvas, look at the data file and do shit!
     for (var i=0; i<canvases.length; i++) {
       var game = Object.create(Game);
+      var width = canvases[i].getAttributeNS(null, 'width'),
+          height = canvases[i].getAttributeNS(null, 'height');
       game.players = [];
       game.states = [];
-      game.canvas = Raphael(canvases[i],
-                            canvases[i].getAttributeNS(null, 'width'),
-                            canvases[i].getAttributeNS(null, 'height'));
+      game.canvas = Raphael(canvases[i], width, height);
+      game.scale = calculate_scale(width, height);
       Game.instances.push(game);
       game.init_game();
     }
@@ -127,8 +128,8 @@
      // FIXME: Add an arrow to show where the team on offense is scoring
   */
   // Sets up the field
-  Game.init_setup_field = function(scale) {
-    scale = scale || 10;
+  Game.init_setup_field = function() {
+    var scale = this.scale || 10;
 
     var length = DIMENSIONS.length * scale, breadth = DIMENSIONS.breadth * scale;
     var x = (this.canvas.width - length)/2,
@@ -430,6 +431,12 @@
 
 
   /****************************** UTILITY FUNCTIONS ******************************/
+
+  // Calculate the scaling to use, based on canvas width and height
+  var calculate_scale = function(width, height){
+    return Math.floor(Math.min(width/(DIMENSIONS.length+DIMENSIONS.boundary),
+                               height/(DIMENSIONS.breadth+DIMENSIONS.boundary)));
+  }
 
   // Start dragging a player
   var drag_player_start =  function(){
