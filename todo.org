@@ -18,3 +18,8 @@
 * Tasks
   - Have scale factor in saved game state... or restoring fails.
   - TESTS!
+  - Add disc!
+  - Allow the disc path to be an IO/OI/Flat... Should probably show a
+    curve between start and end points and let users select
+    curvature.
+    http://cubic-bezier.com/#.01,.59,.45,.93
