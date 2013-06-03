@@ -57,6 +57,8 @@
 
         if (done) {
           console.log('All external libraries loaded!');
+          // Hacky, but not too much, I guess.
+          if (window.QUnit) { QUnit.load() };
           Game.create_instances();
         };
 
