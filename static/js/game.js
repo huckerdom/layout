@@ -55,11 +55,13 @@
           };
         });
 
-        if (done) { Game.create_instances() };
+        if (done) {
+          console.log('All external libraries loaded!');
+          Game.create_instances();
+        };
 
       };
 
-      console.log(document.readyState, window.Raphael, window.jQuery);
       // Wait for all other js (and images!) to finish loading..
       // Load those libraries which aren't already loaded
       if (document.readyState === "complete" && !Game.initialized) {
@@ -474,6 +476,7 @@
       .change(function(evt){
         read_game_files(evt, game);
       });
+
     var load_img = $('<img>').attr('src', 'static/img/load.png');
     $('<button>').attr('id', 'loadGame').append(load_img)
       .appendTo(ui_div).click(function(evt){upload_button.click()})
