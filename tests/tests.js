@@ -1,26 +1,25 @@
-var insert_new_game = function(){
-  var fixture = $('#qunit-fixture');
-  var layout = $('<div>').attr('class', 'layout').attr('width', 1200).attr('height', 600).appendTo(fixture);
-  Game.create_instances();
-};
-
 test( "test all external packages loaded", function() {
   ok( window.jQuery, "We expect to have jQuery" );
   ok( window.Raphael, "We expect to have Raphael" );
   ok( window.Game.initialized, "We expect to have game.js intialized" );
 });
 
+module( "game-tests", {
+  setup: function(){
+    var fixture = $('#qunit-fixture');
+    var layout = $('<div>').attr('class', 'layout').attr('width', 1200).attr('height', 600).appendTo(fixture);
+    Game.create_instances();
+  },
+});
+
 test( "Game instances are created correctly, when layout divs are present", function(){
-  var fixture = $('#qunit-fixture');
-  var layout = $('<div>').attr('class', 'layout').attr('width', 1200).attr('height', 600).appendTo(fixture);
-  equal(layout.children().length, 0);
-  Game.create_instances();
+  var layout = $('.layout');
   notEqual(layout.children().length, 0, "We expect the layout svg to be created");
   equal(Game.instances.length, 1, "We expect one game instance");
 });
 
+
 test("Reading game state works", function(){
-  insert_new_game();
   var game = Game.instances[0];
   var state = game.get_current_state();
 
@@ -34,10 +33,6 @@ test("Reading game state works", function(){
 });
 
 test("Check if saving and loading game works", function(){
-
-  // Insert new game
-  insert_new_game();
-
   // Capture game state
   var game = Game.instances[0];
   game.capture_state();
