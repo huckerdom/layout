@@ -458,9 +458,8 @@
     // Download button
     window.URL = window.URL || window.webkitURL;
     var download_link = $('<a>');
-    var download_img = $('<img>').attr('src', 'static/img/download.png').appendTo(download_link)
-      .attr('title', 'Download Game');
-    var download = $('<button>').attr('id', 'saveGame').append(download_link).appendTo(ui_div);
+    var download_img = $('<img>').attr('src', 'static/img/download.png').appendTo(download_link);
+    var download = $('<button>').attr('id', 'saveGame').append(download_link).appendTo(ui_div).attr('title', 'Download Game');
     download.click(function(evt){
       var blob = new Blob([game.save_game()], {type: 'text/plain'});
       var d = new Date(), date = d.getDate(), month = d.getMonth() + 1, year = d.getFullYear();
@@ -475,45 +474,46 @@
       .change(function(evt){
         read_game_files(evt, game);
       });
-    var load_img = $('<img>').attr('src', 'static/img/load.png')
-      .attr('title', 'Load Game');
+    var load_img = $('<img>').attr('src', 'static/img/load.png');
     $('<button>').attr('id', 'loadGame').append(load_img)
       .appendTo(ui_div).click(function(evt){upload_button.click()})
+      .attr('title', 'Load Game');
 
 
     // Capture state
-    var capture_img = $('<img>').attr('src', 'static/img/capture.png')
-      .attr('title', 'Capture State');
+    var capture_img = $('<img>').attr('src', 'static/img/capture.png');
     $('<button>').attr('id', 'captureGameState').appendTo(ui_div).append(capture_img)
-      .click(function(evt){game.capture_state()});
+      .click(function(evt){game.capture_state()})
+      .attr('title', 'Capture State');
 
     // Clear all game states
-    var clear_img = $('<img>').attr('src', 'static/img/clear.png')
-      .attr('title', 'Clear All Game States');
+    var clear_img = $('<img>').attr('src', 'static/img/clear.png');
     $('<button>').attr('id', 'clearGameStates').append(clear_img).appendTo(ui_div)
-      .click(function(evt){game.clear_states()});
+      .click(function(evt){game.clear_states()})
+      .attr('title', 'Clear All Game States');
 
     // Animate game
-    var anim_img = $('<img>').attr('src', 'static/img/animate.png')
-      .attr('title', 'Animate (Loop)');
+    var anim_img = $('<img>').attr('src', 'static/img/animate.png');
     $('<button>').attr('id', 'animateLoop').appendTo(ui_div).append(anim_img)
-      .click(function(evt){game.animate(null, null, true)});
+      .click(function(evt){game.animate(null, null, true)})
+      .attr('title', 'Animate (Loop)');
 
     // Stop animation
-    var stop_img = $('<img>').attr('src', 'static/img/stop.png')
-      .attr('title', 'Stop Animation');
+    var stop_img = $('<img>').attr('src', 'static/img/stop.png');
     $('<button>').attr('id', 'stopAnimateLoop').appendTo(ui_div).append(stop_img)
-      .click(function(evt){game.stop()});
+      .click(function(evt){game.stop()})
+      .attr('title', 'Stop Animation');
 
     // Step forward
-    var fwd_img = $('<img>').attr('src', 'static/img/forward.png').attr('title', 'Step forward');
+    var fwd_img = $('<img>').attr('src', 'static/img/forward.png');
     $('<button>').attr('id', 'stepForward').appendTo(ui_div).append(fwd_img)
-      .click(function(evt){game.animate()});
+      .click(function(evt){game.animate()})
+      .attr('title', 'Step forward');
 
     // Step backward
 
     // Help dialog
-    var help_img = $('<img>').attr('src', 'static/img/help.png').attr('title', 'Show Help');
+    var help_img = $('<img>').attr('src', 'static/img/help.png');
 
     // FIXME: Append close button...
     // content of the help dialog
@@ -538,7 +538,7 @@
 
 
     $('<button>').attr('id', 'showHideHelp').appendTo(ui_div).append(help_img)
-      .click(toggle_help);
+      .click(toggle_help).attr('title', 'Show Help');
   };
 
   var read_game_files = function(evt, game){
