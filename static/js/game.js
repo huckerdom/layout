@@ -10,7 +10,7 @@
     boundary: 10,
     line_width: 0.1,
     player_radius: 7,
-    disc_radius: 3
+    disc_radius: 5
   }
 
   var svgNS = "http://www.w3.org/2000/svg";
@@ -19,6 +19,7 @@
     current_state: 0,
     states: [],
     players: [],
+    discs: [],
     instances: [],
     canvas: null,  // SVG element
     initialized: false,
@@ -184,29 +185,73 @@
 
     // Setup players;
     for (var i=1; i<=num_players; i++) {
-      for (var t in {o:null, d:null}){
+      for (var t in {"o":null, "d":null}){
         var x_pos = t==="o"?.18:.82;
         var x_rand = Math.random() * DIMENSIONS.player_radius * 2 * (t==="o"?-1:1);
         var d = {x: field.attrs.x, y: field.attrs.y,
                  width: field.attrs.width, height: field.attrs.height};
-        var player = Player.from_dict({type:t, name:i,
-                                   x:d.x+d.width*x_pos+x_rand,
-                                   y:d.y+d.height/(num_players+1)*i});
-        // FIXME: drawing shit needs to be fixed.
-        player.draw(this.canvas);
-        this.players.push(player);
+        this.add_on_field_object(t, i,
+                        d.x+d.width*x_pos+x_rand,
+                        d.y+d.height/(num_players+1)*i);
       };
     };
 
-    Game._default_state = this.get_current_state();
+    this._default_state = this.get_current_state();
 
+  };
+
+  // Adds an object on to the field, either a Player or a Disc
+  Game.add_on_field_object = function(type, id, x, y){
+    var P, obj_list;
+    switch ( type.toLowerCase() )
+    {
+      case "o":
+      P = OffensivePlayer;
+      obj_list = this.players;
+      break;
+
+      case "d":
+      P = DefensivePlayer;
+      obj_list = this.players;
+      break;
+
+      case "disc":
+      P = Disc;
+      obj_list = this.discs;
+      break;
+
+      default:
+      throw "Invalid type for OnFieldObject";
+    }
+
+    // Check if an object with specified 'id' already exists.
+    var ids = [];
+    obj_list.forEach(function(obj){
+      if (obj.id === id && type.toLowerCase() == obj.type) {
+        throw "Object with specified id, already exists"
+      };
+      ids.push(obj.id);
+    });
+
+    // If no id is specified, auto-assign an id.
+    if (id === undefined) {
+      if (ids.length > 0) {
+        id =  Math.max.apply(this, ids) + 1
+      } else {
+        id = 1;
+      }
+    };
+
+    var obj = P.create({id:id, x:x, y:y});
+    obj.draw(this.canvas);
+    obj_list.push(obj);
   };
 
   Game.get_current_state = function(){
     var state = {};
     state.players = [];
     this.players.forEach(function(player){
-      state.players.push(player.to_dict());
+      state.players.push(player.get_state());
     });
     // FIXME: state.disc = XXX
     return state;
@@ -246,7 +291,7 @@
     if (!state) {return;};
     this.current_state = state_index;
     this.players.forEach(function(player, idx){
-      player.update(state.players[idx]);
+      player.set_state(state.players[idx]);
     }, this);
     // this.disc.update(state.disc);
     return this;
@@ -294,38 +339,18 @@
   }
 
   Game.clear_states = function(){
-    this.states = [Game._default_state];
+    this.states = [this._default_state];
     this.reset_to_state();
     this.states = [];
   };
 
   /********************************************************************************/
 
-  // Disc class
-  var Disc = {
-    x: 0,
-    y: 0,
-    radius: DIMENSIONS.disc_radius,
-    color: "white",
-
-    create: function(stage){
-      this.disc = new createjs.Shape();
-      this.disc.graphics.beginFill(this.color).drawCircle(0, 0, this.radius);
-      this.disc.x = this.x;
-      this.disc.y = this.y;
-
-      stage.addChild(this.disc);
-    }
-
-  };
-
-  /********************************************************************************/
-
-  // Player class
-  var Player = {
-    name: 0,
-    radius: DIMENSIONS.player_radius,
+  var OnFieldObject = {
+    id: 0,
+    radius: 0,
     color: "green",
+    show_label: false,
     _x: 0,
     _y: 0,
 
@@ -351,12 +376,22 @@
       if (this.body) {this.body.attr({cy: val})};
     },
 
-    // Draws the player on the stage
+    // Create an object of this type
+    create: function(state) {
+      var obj = Object.create(this);
+      obj.x = state.x || 0;
+      obj.y = state.y || 0;
+      obj.id = state.id;
+      if (state.radius) {obj.radius = state.radius};
+      return obj;
+    },
+
+    // Draws the player on the canvas
     draw: function(canvas){
       // Create a "body"
       this.body = canvas.circle(this.x, this.y, this.radius).attr({'fill': this.color});
 
-      this.label = canvas.text(this.x, this.y, this.name)
+      this.label = canvas.text(this.x, this.y, this.id)
         .attr({'fill':'green', 'font-size': (this.radius * 1.5)});
 
       // Create a group that holds the body and the label together.
@@ -365,42 +400,30 @@
       canvas.set(this.body, this.label).drag(drag_player_move, drag_player_start, null,
                                              this, this);
 
+      if (!this.show_label) { this.label.hide() };
       // FIXME: Add a doubleclick handler to change the label.
       return this;
     },
 
-    // Return state variables to reconstruct the player
-    to_dict: function(){
-      return { type:this.type,
-               name:this.name,
-               radius: this.radius,
-               x: this.x,
-               y: this.y,
-               transform: this.transform,
-             };
-    },
-
-    from_dict: function(state) {
-      if (state.type.toLowerCase() === "o") {
-        var player = Object.create(OffensivePlayer);
-      } else if (state.type.toLowerCase() === "d") {
-        var player = Object.create(DefensivePlayer);
-      } else {
-        return;
-      };
-      player.x = state.x;
-      player.y = state.y;
-      player.name = state.name;
-      if (state.radius) {player.radius = state.radius};
-      return player;
-    },
-
-    update: function(state) {
+    // Updates the object given a new state
+    set_state: function(state) {
       for (var e in state) {
         this[e] = state[e];
       };
     },
 
+    // Return state variables to reconstruct the player
+    get_state: function() {
+      return {
+        type:this.type,
+        id:this.id,
+        radius: this.radius,
+        x: this.x,
+        y: this.y,
+      };
+    },
+
+    // Animate the object to the given new_state, for the given length of time
     animate: function(new_state, time, cb) {
       time = time||2000;
       // Update body and label
@@ -411,6 +434,7 @@
       this.body.animateWith(this.label, anim, new_state, time);
     },
 
+    // Stop or Pause all active animations on the object.
     stop: function(pause) {
       pause = pause||false;
       // Stop animating body and label
@@ -423,12 +447,29 @@
       }
     },
 
-  }
 
-  // Create offensive and defensive player "classes"
+  };
+
+  /********************************************************************************/
+
+  // Disc class
+  var Disc = Object.create(OnFieldObject);
+  Disc.radius = DIMENSIONS.disc_radius;
+  Disc.color = "white";
+
+  /********************************************************************************/
+
+  // Player class
+  var Player = Object.create(OnFieldObject);
+  Player.radius = DIMENSIONS.player_radius;
+  Player.show_label = true;
+
+  // Offensive Player class
   var OffensivePlayer = Object.create(Player);
   OffensivePlayer.color = 'yellow';
   OffensivePlayer.type = 'o';
+
+  // Defensive Player class
   var DefensivePlayer = Object.create(Player);
   DefensivePlayer.color = 'black';
   DefensivePlayer.type = 'd';
@@ -567,7 +608,6 @@
     parent.appendChild(elem);
     return elem;
   };
-
 
   /********************************************************************************/
   Game.init()
