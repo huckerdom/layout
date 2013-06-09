@@ -10,7 +10,7 @@
     boundary: 5,
     line_width: 0.1,
     player_radius: 0.8,
-    disc_radius: 0.4
+    disc_radius: 0.5
   }
 
   var svgNS = "http://www.w3.org/2000/svg";
@@ -113,7 +113,8 @@
       game._mode = canvases[i].dataset.mode || 'play';
       display = calculate_display(width, height);
       game.scale = display[0], game.view = display[1];
-      game._transform = ('R90,'+[width/2, height/2])
+      game._center = [width/2, height/2];
+      game._transform = ('R90,'+game._center);
       Game.instances.push(game);
       game.init_game();
     }
@@ -125,7 +126,7 @@
     // Setup the canvas to have a field and default player objects.
     this.init_setup_field();
     this.init_setup_players();
-
+    this.add_on_field_object("disc", undefined, this._center[0], this._center[1]);
     // Read layout file from data-layout attribute on canvas
     this.read_layout_file();
 
