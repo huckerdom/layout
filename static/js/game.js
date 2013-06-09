@@ -104,12 +104,13 @@
     // For each canvas, look at the data file and do shit!
     for (var i=0; i<canvases.length; i++) {
       var game = Object.create(Game);
-      var width = canvases[i].getAttributeNS(null, 'width'),
-          height = canvases[i].getAttributeNS(null, 'height'),
+      var width = $(canvases[i]).attr('width'),
+          height = $(canvases[i]).attr('height'),
           display;
       game.players = [];
       game.states = [];
       game.canvas = Raphael(canvases[i], width, height);
+      game._mode = canvases[i].dataset.mode || 'play';
       display = calculate_display(width, height);
       game.scale = display[0], game.view = display[1];
       game._transform = ('R90,'+[width/2, height/2])
@@ -260,7 +261,7 @@
       }
     };
 
-    var obj = P.create({id:id, x:x, y:y, radius:radius});
+    var obj = P.create({id:id, x:x, y:y, radius:radius, _mode:this._mode});
     var elem = obj.draw(this.canvas);
     if (this.view == 'portrait') {
       elem.transform(this._transform+'r-90');
@@ -289,7 +290,6 @@
   Game.save_game = function(){
     var game;
     game = JSON.stringify(this.states, null, "  ");
-    // FIXME: Save game to a shit file!
     return game;
   };
 
@@ -404,6 +404,7 @@
       obj.x = state.x || 0;
       obj.y = state.y || 0;
       obj.id = state.id;
+      obj._mode = state._mode || 'play';
       if (state.radius) {obj.radius = state.radius};
       return obj;
     },
@@ -418,12 +419,15 @@
 
       // Create a group that holds the body and the label together.
       // Ability to drag the player around
-      // FIXME: Should be a toggle-able feature!
-      this._elements = canvas.set(this.body, this.label).drag(drag_player_move, drag_player_start,
-                                                              null, this, this);
+      this._elements = canvas.set(this.body, this.label)
+
+      if (this._mode == 'edit') {
+        this._elements.drag(drag_player_move, drag_player_start, null, this, this);
+        // FIXME: Add a doubleclick handler to change the label.
+      }
 
       if (!this.show_label) { this.label.hide() };
-      // FIXME: Add a doubleclick handler to change the label.
+
       return this._elements;
     },
 
@@ -548,28 +552,37 @@
     // Upload button
     var upload_button = $('<input type=file>').attr('id', 'upload-game-file')
       .attr('accept', 'text/plain').css('display', 'none')
-      .insertAfter(game.canvas.canvas).attr('href', '#')
       .change(function(evt){
         read_game_files(evt, game);
       });
 
     var load_img = $('<img>').attr('src', 'static/img/load.png');
-    $('<button>').attr('id', 'loadGame').append(load_img)
+    var upload = $('<button>').attr('id', 'loadGame').append(load_img)
       .appendTo(ui_div).click(function(evt){upload_button.click()})
       .attr('title', 'Load Game');
+    if (game._mode != 'play') {
+      upload_button.insertAfter(game.canvas.canvas).attr('href', '#');
+      upload.appendTo(ui_div);
+    }
 
 
     // Capture state
     var capture_img = $('<img>').attr('src', 'static/img/capture.png');
-    $('<button>').attr('id', 'captureGameState').appendTo(ui_div).append(capture_img)
+    var capture = $('<button>').attr('id', 'captureGameState').appendTo(ui_div).append(capture_img)
       .click(function(evt){game.capture_state()})
       .attr('title', 'Capture State');
+    if (game._mode != 'play') {
+      capture.appendTo(ui_div);
+    }
 
     // Clear all game states
     var clear_img = $('<img>').attr('src', 'static/img/clear.png');
-    $('<button>').attr('id', 'clearGameStates').append(clear_img).appendTo(ui_div)
+    var clear = $('<button>').attr('id', 'clearGameStates').append(clear_img).appendTo(ui_div)
       .click(function(evt){game.clear_states()})
       .attr('title', 'Clear All Game States');
+    if (game._mode != 'play') {
+      clear.appendTo(ui_div);
+    }
 
     // Animate game
     var anim_img = $('<img>').attr('src', 'static/img/animate.png');
