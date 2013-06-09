@@ -7,10 +7,10 @@
     breadth: 37,
     end_zones: [18, 82],
     bricks: [36, 64],
-    boundary: 10,
+    boundary: 5,
     line_width: 0.1,
-    player_radius: 7,
-    disc_radius: 5
+    player_radius: 0.8,
+    disc_radius: 0.4
   }
 
   var svgNS = "http://www.w3.org/2000/svg";
@@ -162,7 +162,7 @@
     this.canvas.path(lines).attr({'stroke': 'white', 'stroke-width': DIMENSIONS.line_width*scale});
 
     // Draw brick marks
-    var c = DIMENSIONS.player_radius/2;
+    var c = (DIMENSIONS.player_radius * this.scale) / 2;
 
     var bricks = "M" + (x + DIMENSIONS.bricks[0]*scale - c) + "," + (y + breadth/2 - c) +
                  "L" + (x + DIMENSIONS.bricks[0]*scale + c) + "," + (y + breadth/2 + c) +
@@ -187,12 +187,12 @@
     for (var i=1; i<=num_players; i++) {
       for (var t in {"o":null, "d":null}){
         var x_pos = t==="o"?.18:.82;
-        var x_rand = Math.random() * DIMENSIONS.player_radius * 2 * (t==="o"?-1:1);
+        var x_rand = Math.random() * DIMENSIONS.player_radius * this.scale * 2 * (t==="o"?-1:1);
         var d = {x: field.attrs.x, y: field.attrs.y,
                  width: field.attrs.width, height: field.attrs.height};
         this.add_on_field_object(t, i,
-                        d.x+d.width*x_pos+x_rand,
-                        d.y+d.height/(num_players+1)*i);
+                                 d.x+d.width*x_pos+x_rand,
+                                 d.y+d.height/(num_players+1)*i);
       };
     };
 
@@ -202,7 +202,7 @@
 
   // Adds an object on to the field, either a Player or a Disc
   Game.add_on_field_object = function(type, id, x, y){
-    var P, obj_list;
+    var P, obj_list, radius = DIMENSIONS.player_radius * this.scale;;
     switch ( type.toLowerCase() )
     {
       case "o":
@@ -218,6 +218,7 @@
       case "disc":
       P = Disc;
       obj_list = this.discs;
+      radius = DIMENSIONS.disc_radius * this.scale
       break;
 
       default:
@@ -242,7 +243,7 @@
       }
     };
 
-    var obj = P.create({id:id, x:x, y:y});
+    var obj = P.create({id:id, x:x, y:y, radius:radius});
     obj.draw(this.canvas);
     obj_list.push(obj);
   };
