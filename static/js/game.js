@@ -23,6 +23,8 @@
     instances: [],
     canvas: null,  // SVG element
     initialized: false,
+    // Set of all drawn elements
+    all_elements: null // Useful for applying global transormations
   };
 
 
@@ -103,11 +105,14 @@
     for (var i=0; i<canvases.length; i++) {
       var game = Object.create(Game);
       var width = canvases[i].getAttributeNS(null, 'width'),
-          height = canvases[i].getAttributeNS(null, 'height');
+          height = canvases[i].getAttributeNS(null, 'height'),
+          display;
       game.players = [];
       game.states = [];
       game.canvas = Raphael(canvases[i], width, height);
-      game.scale = calculate_scale(width, height);
+      display = calculate_display(width, height);
+      game.scale = display[0], game.view = display[1];
+      game._transform = ('R90,'+[width/2, height/2])
       Game.instances.push(game);
       game.init_game();
     }
@@ -141,6 +146,7 @@
         y = (this.canvas.height - breadth)/2;
 
     var b = DIMENSIONS.boundary * scale;
+    this.all_elements = this.canvas.set();
 
     // Draw field
     var field = this.canvas.rect(x, y, length, breadth)
@@ -148,10 +154,13 @@
              'stroke': '#ffffff', 'stroke-width': DIMENSIONS.line_width*scale,
             });
     this._field_id = field.id;
+    this.all_elements.push(field);
+
 
     // Draw extra outer zone
-    this.canvas.rect(x-b/2, y-b/2, length+b, breadth+b).attr({'stroke': '#00aa00', 'stroke-width': b});
-
+    var boundary = this.canvas.rect(x-b/2, y-b/2, length+b, breadth+b)
+      .attr({'stroke': '#00aa00', 'stroke-width': b});
+    this.all_elements.push(boundary);
 
     // Draw end zone lines
     var lines = "M" + (x + DIMENSIONS.end_zones[0]*scale) + "," + y +
@@ -159,7 +168,9 @@
                 "M" + (x + DIMENSIONS.end_zones[1]*scale) + "," + y +
                 "L" + (x + DIMENSIONS.end_zones[1]*scale) + "," + (y+breadth);
 
-    this.canvas.path(lines).attr({'stroke': 'white', 'stroke-width': DIMENSIONS.line_width*scale});
+    var end_zones = this.canvas.path(lines)
+      .attr({'stroke': 'white', 'stroke-width': DIMENSIONS.line_width*scale});
+    this.all_elements.push(end_zones);
 
     // Draw brick marks
     var c = (DIMENSIONS.player_radius * this.scale) / 2;
@@ -174,7 +185,13 @@
                  "M" + (x + DIMENSIONS.bricks[1]*scale - c) + "," + (y + breadth/2 + c) +
                  "L" + (x + DIMENSIONS.bricks[1]*scale + c) + "," + (y + breadth/2 - c);
 
-    this.canvas.path(bricks).attr({'stroke': 'white', 'stroke-width': DIMENSIONS.line_width*scale});
+    var brick_marks = this.canvas.path(bricks)
+      .attr({'stroke': 'white', 'stroke-width': DIMENSIONS.line_width*scale});
+    this.all_elements.push(brick_marks);
+
+    if (this.view == 'portrait') {
+      this.all_elements.transform(this._transform);
+    };
 
   };
 
@@ -244,7 +261,11 @@
     };
 
     var obj = P.create({id:id, x:x, y:y, radius:radius});
-    obj.draw(this.canvas);
+    var elem = obj.draw(this.canvas);
+    if (this.view == 'portrait') {
+      elem.transform(this._transform+'r-90');
+    }
+    this.all_elements.push(elem);
     obj_list.push(obj);
   };
 
@@ -398,12 +419,12 @@
       // Create a group that holds the body and the label together.
       // Ability to drag the player around
       // FIXME: Should be a toggle-able feature!
-      canvas.set(this.body, this.label).drag(drag_player_move, drag_player_start, null,
-                                             this, this);
+      this._elements = canvas.set(this.body, this.label).drag(drag_player_move, drag_player_start,
+                                                              null, this, this);
 
       if (!this.show_label) { this.label.hide() };
       // FIXME: Add a doubleclick handler to change the label.
-      return this;
+      return this._elements;
     },
 
     // Updates the object given a new state
@@ -479,9 +500,20 @@
   /****************************** UTILITY FUNCTIONS ******************************/
 
   // Calculate the scaling to use, based on canvas width and height
-  var calculate_scale = function(width, height){
-    return Math.floor(Math.min(width/(DIMENSIONS.length+DIMENSIONS.boundary),
-                               height/(DIMENSIONS.breadth+DIMENSIONS.boundary)));
+  var calculate_display = function(width, height){
+    var w, h, view;
+    width = parseInt(width);
+    height = parseInt(height);
+    if (width > height) {
+      w = (DIMENSIONS.length+DIMENSIONS.boundary);
+      h = (DIMENSIONS.breadth+DIMENSIONS.boundary);
+      view = 'landscape'
+    } else {
+      w = (DIMENSIONS.breadth+DIMENSIONS.boundary);
+      h = (DIMENSIONS.length+DIMENSIONS.boundary);
+      view = 'portrait'
+    }
+    return [Math.floor(Math.min(width/w, height/h)), view];
   }
 
   // Start dragging a player
