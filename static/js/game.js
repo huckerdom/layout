@@ -16,11 +16,13 @@
   var svgNS = "http://www.w3.org/2000/svg";
 
   var Game = {
+    instances: [],
+
     current_state: 0,
     states: [],
-    players: [],
-    discs: [],
-    instances: [],
+    players: {},
+    discs: {},
+    _control_points: {},
     canvas: null,  // SVG element
     initialized: false,
     // Set of all drawn elements
@@ -61,7 +63,9 @@
         if (done) {
           console.log('All external libraries loaded!');
           // Hacky, but not too much, I guess.
-          if (window.QUnit) { QUnit.load() };
+          if (window.QUnit) { QUnit.load();
+                              QUnit.start();
+                            };
           Game.create_instances();
         };
 
@@ -107,8 +111,10 @@
       var width = $(canvases[i]).attr('width'),
           height = $(canvases[i]).attr('height'),
           display;
-      game.players = [];
+      game.players = {};
+      game.discs = {};
       game.states = [];
+      game._control_points = {};
       game.canvas = Raphael(canvases[i], width, height);
       game._mode = canvases[i].dataset.mode || 'play';
       display = calculate_display(width, height);
@@ -117,15 +123,29 @@
       game._transform = ('R90,'+game._center);
       Game.instances.push(game);
       game.init_game();
-    }
+
+      // Add custom attribute "along"
+      game.canvas.customAttributes.along = function (v, p0x, p0y, p1x, p1y, p2x, p2y, p3x, p3y) {
+        var p = Raphael.findDotsAtSegment(p0x, p0y, p1x, p1y, p2x, p2y, p3x, p3y, v);
+        return {x:p.x, y:p.y, cx:p.x, cy:p.y};
+      };
+
+    };
 
   };
+
+  // Remove all game instances
+  Game.reset = function() {
+    Game.instances = [];
+    Game.initialized = false;
+  }
 
   // Initial setup for a game instance
   Game.init_game = function() {
     // Setup the canvas to have a field and default player objects.
     this.init_setup_field();
     this.init_setup_players();
+    this.add_control_points();
     this.add_on_field_object("disc", undefined, this._center[0], this._center[1]);
     // Read layout file from data-layout attribute on canvas
     this.read_layout_file();
@@ -219,25 +239,62 @@
 
   };
 
+  // Init control points.
+  // Points to be used to specify the path of an on field object
+  Game.add_control_points = function(){
+    var ids = [0, 1, 2];
+    ids.forEach(function(id){
+      var cp = this.add_on_field_object("control", id, this._center[0], this._center[1]);
+    }, this);
+
+    this._control_points[0].body.undrag();
+    this._control_points[0].body.dblclick(hide_control_points);
+
+    // Add a path
+    var path = "M0,0 0,0,0,0 0,0"
+    var P = this.canvas.path(path);
+    P.attr('stroke', 'white').attr('stroke-width', 2);
+    this._control_points['path'] = P;
+
+    this.hide_control_points();
+
+  };
+
+  Game.hide_control_points = function(){
+    for (var i in this._control_points) {
+      if (i != 'current') {
+        this._control_points[i].body && this._control_points[i].body.hide() || this._control_points[i].hide();
+      }
+    }
+  };
+
   // Adds an object on to the field, either a Player or a Disc
   Game.add_on_field_object = function(type, id, x, y){
-    var P, obj_list, radius = DIMENSIONS.player_radius * this.scale;;
+    var P, container, radius = DIMENSIONS.player_radius * this.scale;
     switch ( type.toLowerCase() )
     {
       case "o":
       P = OffensivePlayer;
-      obj_list = this.players;
+      container = this.players["o"];
+      if (container === undefined) { this.players["o"] = container = {} };
       break;
 
       case "d":
       P = DefensivePlayer;
-      obj_list = this.players;
+      container = this.players["d"];
+      if (container === undefined) { this.players["d"] = container = {} };
       break;
 
       case "disc":
       P = Disc;
-      obj_list = this.discs;
-      radius = DIMENSIONS.disc_radius * this.scale
+      container = this.discs;
+      radius = DIMENSIONS.disc_radius * this.scale;
+      break;
+
+      case "control":
+      P = ControlPoint;
+      container = this._control_points;
+      radius = DIMENSIONS.disc_radius * 1.5 * this.scale;
       break;
 
       default:
@@ -245,16 +302,14 @@
     }
 
     // Check if an object with specified 'id' already exists.
-    var ids = [];
-    obj_list.forEach(function(obj){
-      if (obj.id === id && type.toLowerCase() == obj.type) {
-        throw "Object with specified id, already exists"
-      };
-      ids.push(obj.id);
-    });
+    if (container[id] != undefined) {
+      throw "Object of type: " + type + " with id: " + id + ", already exists"
+    }
 
     // If no id is specified, auto-assign an id.
     if (id === undefined) {
+      var ids = [];
+      for (var x in container) { ids.push(x) };
       if (ids.length > 0) {
         id =  Math.max.apply(this, ids) + 1
       } else {
@@ -262,22 +317,36 @@
       }
     };
 
-    var obj = P.create({id:id, x:x, y:y, radius:radius, _mode:this._mode});
+    var obj = P.create({id:id, x:x, y:y, radius:radius, _mode:this._mode,
+                       type:type.toLowerCase()});
     var elem = obj.draw(this.canvas);
     if (this.view == 'portrait') {
       elem.transform(this._transform+'r-90');
     }
     this.all_elements.push(elem);
-    obj_list.push(obj);
+    container[id] = obj;
+    return obj;
   };
 
   Game.get_current_state = function(){
+    // FIXME: Normalize on scale and moved origin, to make the data file portable.
     var state = {};
-    state.players = [];
-    this.players.forEach(function(player){
-      state.players.push(player.get_state());
-    });
-    // FIXME: state.disc = XXX
+    state.players = {};
+    state.discs = {};
+
+    for (var team_id in this.players) {
+      var team = state.players[team_id];
+      for (var player_id in this.players[team_id]) {
+        if (team === undefined) { state.players[team_id] = team = {} };
+        var p = this.players[team_id][player_id].get_state();
+        team[player_id] = p;
+      };
+    };
+
+    for (var disc_id in this.discs) {
+      state.discs[disc_id] = this.discs[disc_id].get_state();
+    }
+
     return state;
   }
 
@@ -285,6 +354,7 @@
   Game.capture_state = function(){
     var state = this.get_current_state();
     this.states.push(state);
+    this.current_state = this.states.length-1;
     return state;
   };
 
@@ -313,31 +383,82 @@
     var state = this.states[state_index];
     if (!state) {return;};
     this.current_state = state_index;
-    this.players.forEach(function(player, idx){
-      player.set_state(state.players[idx]);
-    }, this);
-    // this.disc.update(state.disc);
+
+    for (var team_id in this.players) {
+      for (var player_id in this.players[team_id]) {
+        this.players[team_id][player_id].set_state(state.players[team_id][player_id]);
+      }
+    };
+
+    for (var disc_id in this.discs) {
+      this.discs[disc_id].set_state(state.discs[disc_id]);
+    };
+
     return this;
   };
 
-  Game.animate = function(fps, start, loop){
+  Game.animate = function(time, start, loop, callback){
+    /*
+      time - number of ms that one step of the animation should run for.
+      start - the state index at which the animation should start at
+      loop - should we loop, the animation after we reach the end?
+      callback - is called each time one animation is finished.
+    */
     // FIXME: Add a flag for already animating and don't start another animation if already animating
     // FIXME: Check paused flag and resume
-    if ( !this.players.length || !this.states.length ) { return; };
-    fps = fps||24;
+    this.hide_control_points();
+    if ( $.isEmptyObject(this.players) || !this.states.length ) { return; };
+    time = time||2000;
     start = start < (this.states.length-1) && start ||
             this.current_state < (this.states.length-1) && this.current_state || 0;
     var end = start+1;
     if (start != this.current_state) { this.reset_to_state(start) };
-    this.players.forEach(function(player, i){
-      var state = this.states[end].players[i];
-      if (loop && i == 0) {
-        var callback = Game.animate.bind(this, fps, start+1, loop);
-        player.animate(state, null, callback);
-      } else {
-        player.animate(state);
+
+    // callback passed to some animate?
+    var called = false;
+    var next_step = Game.animate.bind(this, time, start+1, loop, callback);
+
+    if (loop) {
+      var cb = function(){
+        next_step();
+        if (callback) { callback() };
       }
-    }, this);
+    } else {
+      var cb = callback
+    }
+
+    // Clear the control point info if it's useless
+    var clear_control_point_info = function(state, obj) {
+      if ( state._control_points && state._control_points[0] ){
+        if ( obj.x != state._control_points[0].x || obj.y != state._control_points[0].y ){
+          state._control_points = undefined;
+        }
+      }
+      return state;
+    };
+
+
+    for (var disc_id in this.discs) {
+      var disc = this.discs[disc_id];
+      var state = this.states[end].discs[disc_id];
+      clear_control_point_info(state, disc);
+      disc.animate(state, time);
+    }
+
+    for (var team_id in this.players) {
+      for (var player_id in this.players[team_id]) {
+        var player = this.players[team_id][player_id];
+        var state = this.states[end].players[team_id][player_id];
+        clear_control_point_info(state, disc);
+        if ( ! called ) {
+          player.animate(state, time, cb);
+          called = true;
+        } else {
+          player.animate(state, time);
+        }
+      }
+    }
+
     this.current_state += 1;
     this.current_state = this.current_state < this.states.length && this.current_state || 0;
   };
@@ -346,9 +467,12 @@
   Game.stop = function(pause){
     // FIXME: Add a flag for paused state somewhere
     pause = pause || false;
-    this.players.forEach(function(player, i){
-      player.stop(pause);
-    }, this);
+    for (var team_id in this.players) {
+      for (var player_id in this.players[team_id]) {
+        var player = this.players[team_id][player_id];
+        player.stop(pause);
+      }
+    };
     this.reset_to_state(this.current_state);
   };
 
@@ -365,6 +489,41 @@
     this.states = [this._default_state];
     this.reset_to_state();
     this.states = [];
+  };
+
+
+  // Get the game instance from a canvas object
+  Game.get_from_canvas = function(canvas){
+    var g;
+    Game.instances.forEach(function(game){
+      if (game.canvas == canvas){ g = game; };
+    });
+    return g;
+  };
+
+
+  // Get the object's state in the game's current state
+  Game.get_object_state = function(obj) {
+    if (this.states.length == 0) { return };
+    var container, current_state = this.states[this.current_state];
+
+    switch (obj.type.toLowerCase()) {
+
+      case "o":
+      case "d":
+      container = current_state.players[obj.type.toLowerCase()];
+      break;
+
+      case "disc":
+      container = current_state.discs;
+      break;
+
+      default:
+      return;
+
+    };
+
+    return container[obj.id];
   };
 
   /********************************************************************************/
@@ -405,6 +564,7 @@
       obj.x = state.x || 0;
       obj.y = state.y || 0;
       obj.id = state.id;
+      obj.type = state.type;
       obj._mode = state._mode || 'play';
       if (state.radius) {obj.radius = state.radius};
       return obj;
@@ -414,17 +574,17 @@
     draw: function(canvas){
       // Create a "body"
       this.body = canvas.circle(this.x, this.y, this.radius).attr({'fill': this.color});
-
       this.label = canvas.text(this.x, this.y, this.id)
         .attr({'fill':'green', 'font-size': (this.radius * 1.5)});
-
+      this.body.node.id = this.type + '-' + this.id + '-' + 'body'
+      this.label.node.id = this.type + '-' + this.id + '-' + 'label'
       // Create a group that holds the body and the label together.
       // Ability to drag the player around
       this._elements = canvas.set(this.body, this.label)
 
       if (this._mode == 'edit') {
-        this._elements.drag(drag_player_move, drag_player_start, null, this, this);
-        // FIXME: Add a doubleclick handler to change the label.
+        this._elements.drag(drag_obj_move, drag_obj_start, drag_obj_done, this, this, this);
+       // FIXME: Add a doubleclick handler to change the label.
       }
 
       if (!this.show_label) { this.label.hide() };
@@ -447,6 +607,7 @@
         radius: this.radius,
         x: this.x,
         y: this.y,
+        _control_points: this._control_points,
       };
     },
 
@@ -456,6 +617,18 @@
       // Update body and label
       new_state.cx = new_state.x;
       new_state.cy = new_state.y;
+
+      if ( new_state._control_points === undefined ) {
+        // Nothing to do
+      } else {
+        var p0x = this.x, p0y = this.y,
+            p1x = new_state._control_points[1].x, p1y = new_state._control_points[1].y,
+            p2x = new_state._control_points[2].x, p2y = new_state._control_points[2].y,
+            p3x = new_state.x, p3y = new_state.y;
+        this.body.attr({along: [0, p0x, p0y, p1x, p1y, p2x, p2y, p3x, p3y]});
+        new_state = {along: [1, p0x, p0y, p1x, p1y, p2x, p2y, p3x, p3y]}
+      }
+
       var anim = Raphael.animation(new_state, time, 'linear', cb);
       this.label.animate(anim);
       this.body.animateWith(this.label, anim, new_state, time);
@@ -474,7 +647,94 @@
       }
     },
 
+  };
 
+
+
+  // Start dragging an on field object
+  var drag_obj_start =  function(){
+    console.log('Drag started');
+    this._ox = this.body.attr('cx');
+    this._oy = this.body.attr('cy');
+  };
+
+  // Drag and move the object around
+  var drag_obj_move = function(dx, dy){
+    console.log('Dragging...');
+    this.body.attr({cx: this._ox + dx, cy:this._oy + dy});
+    this.label.attr({x: this._ox + dx, y:this._oy + dy});
+  };
+
+  // Click obj
+  var drag_obj_done = function(){
+    console.log('Drag finished');
+    var game = Game.get_from_canvas(this.body.paper);
+    var previous_state = game.get_object_state(this);
+    if (previous_state === undefined && this.type != "control") { return };
+
+    var P0 = game._control_points['0'];
+    var P1 = game._control_points['1'];
+    var P2 = game._control_points['2'];
+    var P = game._control_points['path'];
+    var P3;
+
+    if (this.type === "control") {
+      P3 = game._control_points['current'];
+    } else {
+      P3 = this;
+    }
+
+    // Clear out old cached locations of control points
+    var cp = this._control_points
+    if (cp && previous_state && (cp[0].x != previous_state.x || cp[0].y != previous_state.y)) {
+      this._control_points = cp = undefined
+    };
+
+    if ( previous_state != undefined && (game._control_points['current'] != this  || !cp)) {
+      game._control_points['current'] = this;
+
+      // Move P0 to the previous position.
+      // Set radius, fill and opacity
+      P0.x = previous_state.x;
+      P0.y = previous_state.y;
+      P0.body.attr('r', previous_state.radius);
+      P0.body.attr('fill', previous_state.fill);
+      P0.body.attr('opacity', 0.5);
+
+      // Move P1, P2 to required locations
+      P1.x = cp && cp[1].x || 1/3 * (2 * previous_state.x + P3.x);
+      P1.y = cp && cp[1].y ||1/3 * (2 * previous_state.y + P3.y);
+
+      P2.x = cp && cp[2].x || 1/3 * (previous_state.x + 2 * P3.x);
+      P2.y = cp && cp[2].y || 1/3 * (previous_state.y + 2 * P3.y);
+
+    };
+
+    // Draw the path and show the control points
+    var path = "M" + P0.x + ',' + P0.y + ' C' + P1.x + ',' + P1.y + ', '
+      + P2.x + ',' + P2.y + ' ' + P3.x + ',' + P3.y;
+    P.attr('path', path);
+    P.show();
+    P0.body.show();
+    P1.body.show();
+    P2.body.show();
+
+    // Get state for P0, P1, P2 and save it. (P0 is technically the
+    // previous position, and P3 the current position, but anyway...)
+    P3._control_points = {};
+    P3._control_points[0] = game._control_points[0].get_state();
+    P3._control_points[1] = game._control_points[1].get_state();
+    P3._control_points[2] = game._control_points[2].get_state();
+
+  }
+
+  Game.s = drag_obj_start;
+  Game.m = drag_obj_move;
+  Game.d = drag_obj_done;
+
+  var hide_control_points = function() {
+    var game = Game.get_from_canvas(this.paper)
+    game.hide_control_points();
   };
 
   /********************************************************************************/
@@ -483,6 +743,13 @@
   var Disc = Object.create(OnFieldObject);
   Disc.radius = DIMENSIONS.disc_radius;
   Disc.color = "white";
+
+  /********************************************************************************/
+
+  // Control point class
+  var ControlPoint = Object.create(OnFieldObject);
+  ControlPoint.radius = DIMENSIONS.disc_radius;
+  ControlPoint.color = "red";
 
   /********************************************************************************/
 
@@ -520,19 +787,6 @@
     }
     return [Math.floor(Math.min(width/w, height/h)), view];
   }
-
-  // Start dragging a player
-  var drag_player_start =  function(){
-    this._ox = this.body.attr('cx');
-    this._oy = this.body.attr('cy');
-  };
-
-  // Drag and move the player around
-  var drag_player_move = function(dx, dy){
-    this.body.attr({cx: this._ox + dx, cy:this._oy + dy});
-    this.label.attr({x: this._ox + dx, y:this._oy + dy});
-  };
-
 
   var add_UI = function(game) {
     var container = $(game.canvas.canvas.parentElement);
