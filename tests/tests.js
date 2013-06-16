@@ -63,12 +63,13 @@ test("Check if saving and loading game works", function(){
   // Change game state
   var player = game.players["o"][1];
   var old_x = player.x;
+  var old_y = player.y;
   player.x += 10;
   notEqual(player.x, old_x);
 
   // Update game with saved state and check if restored correctly
   game.update(saved_game);
-  equal(player.x, old_x);
+  ok(close(player, {x: old_x, y:old_y}, 0.1));
 
 });
 

@@ -359,19 +359,44 @@
   };
 
   Game.save_game = function(){
-    var game;
-    game = JSON.stringify(this.states, null, "  ");
-    return game;
+    var field = this.canvas.getById(this._field_id), h = field.attr('x'), k = field.attr('x'),
+        scale = this.scale;
+
+    var fix_data = function(key, value) {
+      if (key == 'x' || key == 'cx') {
+        return ((value-h)/scale);
+      } else if (key == 'y' || key == 'cy') {
+        return ((value-k)/scale);
+      } else {
+        return value;
+      }
+    }
+
+    return JSON.stringify(this.states, fix_data, "  ");
   };
 
   Game.update = function(text){
     if (!text) { alert('Empty text, cannot load game'); };
+
+    var field = this.canvas.getById(this._field_id), h = field.attr('x'), k = field.attr('x'),
+        scale = this.scale;
+
+    var fix_data = function(key, value) {
+      if (key == 'x' || key == 'cx') {
+        return value * scale + h;
+      } else if (key == 'y' || key == 'cy') {
+        return value * scale + k;
+      } else {
+        return value;
+      }
+    }
+
     try {
-      var states = JSON.parse(text);
-      // FIXME: add more checks?
+      var states = JSON.parse(text, fix_data);
     } catch (e) {
       alert('Not a valid json file, cannot load game');
     }
+
     this.states = states;
     this.current_state = 0;
     if (this.states) {this.reset_to_state(this.current_state)};
@@ -604,7 +629,6 @@
       return {
         type:this.type,
         id:this.id,
-        radius: this.radius,
         x: this.x,
         y: this.y,
         _control_points: this._control_points,
@@ -653,21 +677,18 @@
 
   // Start dragging an on field object
   var drag_obj_start =  function(){
-    console.log('Drag started');
     this._ox = this.body.attr('cx');
     this._oy = this.body.attr('cy');
   };
 
   // Drag and move the object around
   var drag_obj_move = function(dx, dy){
-    console.log('Dragging...');
     this.body.attr({cx: this._ox + dx, cy:this._oy + dy});
     this.label.attr({x: this._ox + dx, y:this._oy + dy});
   };
 
   // Click obj
   var drag_obj_done = function(){
-    console.log('Drag finished');
     var game = Game.get_from_canvas(this.body.paper);
     var previous_state = game.get_object_state(this);
     if (previous_state === undefined && this.type != "control") { return };
