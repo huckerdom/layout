@@ -4,6 +4,7 @@
     <script src="static/js/raphael-min.js"></script>
     <script src="static/js/jquery-1.9.1.min.js"></script>
     <link rel="stylesheet" href="static/css/style.css" type="text/css">
+    <title>Layout</title>
   </head>
   <body>
 
@@ -11,9 +12,9 @@
     <div id="navbar">
       <div id="menu">
         <ul>
-          <li><a href="#about">About</a></li>
-          <li><a href="#demo">Try it!</a></li>
-          <li><a href="#embed">Embed</a></li>
+          <li><a href="#about"><img src="static/img/info.png" title="About"></a></li>
+          <li><a href="#demo"><img src="static/img/demo.png" title="Try it"></img></a></li>
+          <li><a href="#embed"><img src="static/img/embed.png" title="Embed"></a></li>
         </ul>
       </div>
     </div>
@@ -94,12 +95,11 @@
         </div>
       </section>
 
-      <div id="demo">
-        <h1>Try it!</h1>
-        <div class="layout" width="1000" height="500" data-mode="edit">
+      <section id="demo">
+        <div class="layout" width="900" height="450" data-mode="edit">
           <script src="static/js/game.js"></script>
         </div>
-      </div>
+      </section>
 
       <section id="embed">
         <h1>Embed</h1>

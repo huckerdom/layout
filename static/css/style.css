@@ -6,15 +6,17 @@ body {
 
 section {
     margin-bottom: 2000px;
-    padding-top: 100px;
-    width: 60%;
-    margin-left: 20%;
+    width: 95%;
+    margin-left: 2.5%;
+    max-height: 800px;
 }
 
 h1 {
     font-size: 40px;
     color: rgb(41, 35, 30);
     width: 100%;
+    padding-top: 2.5%;
+    margin: 0px;
 }
 
 p {
@@ -28,37 +30,35 @@ h5 {
 /* Navigation Bar */
 #navbar {
     position: fixed;
-    top: 0px;
-    height: 100px;
-    width: 100%;
+    top: 40%;
+    left: 5px;
+    height: 150px;
+    width: 50px;
     z-index: 200;
-    background: black;
+    background: lightgray;
     text-align: center;
 }
 
 #menu {
+    padding-top: 20px;
     text-align: center;
     width: 100%;
-    height: 50px;
-    padding-top: 25px;
     z-index: 30;
     position: relative;
 }
 #menu ul {
     margin: 0px;
-    padding-bottom: 5px;
+    padding: 5px;
 }
 #menu li {
     list-style-type: none;
-    display: inline;
+    display: block;
 }
 #menu a {
     text-decoration: none;
     letter-spacing: -1px;
     font-size: 20px;
     color: rgb(209, 182, 153);
-    padding-right: 16px;
-    padding-left: 16px;
     font-weight: normal;
 }
 #menu a:hover {
@@ -70,13 +70,9 @@ h5 {
 /* Content */
 #content {
     position: relative;
-    width: 80%;
-    margin-left: 10%;
-}
-
-#app,#demo {
-    margin-bottom: 2000px;
-    padding-top: 100px;
+    width: 95%;
+    margin: 0 auto;
+    max-width: 900px;
 }
 
 .button-container button img{
