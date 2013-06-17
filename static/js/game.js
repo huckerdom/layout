@@ -504,11 +504,27 @@
   Game.read_layout_file = function(){
     var layout_file = this.canvas.canvas.parentElement.dataset.layoutFile;
     if (layout_file == undefined) { return; }
+
+    // Check if the layout_file is on the same domain and act accordingly
+    var url = document.createElement('a');
+    url.href = layout_file;
     var game = this;
-    var read_layout = $.get(layout_file, function(data){
-      game.update(data);
-    });
-  }
+
+    if (document.location.host === url.host) {
+      var jqxhr = $.get(layout_file);
+      jqxhr.done(function(data){
+        game.update(data);
+      });
+    } else {
+      var jqxhr = $.getJSON('http://whateverorigin.org/get?url=' +
+                        encodeURIComponent(url.toString()) + '&callback=?');
+      jqxhr.done(function(data){
+        game.update(data.contents);
+      });
+    };
+
+
+  };
 
   Game.clear_states = function(){
     this.states = [this._default_state];
