@@ -5,19 +5,16 @@ body {
 }
 
 section {
-    margin-bottom: 20%;
     width: 95%;
     margin-left: 2.5%;
-    min-height: 800px;
-    max-height: 1200px;
-
 }
 
 h1 {
     font-size: 40px;
     color: rgb(41, 35, 30);
     width: 100%;
-    padding-top: 2.5%;
+    padding-top: 0px;
+    margin-top: 0px;
 }
 
 p {

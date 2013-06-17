@@ -11,4 +11,15 @@ var update_layout_file_URI = function(){
   $('.layout')[0].dataset.layoutFile = url;
 }
 
+var set_padding_for_sections = function(){
+  $('section').each(function(idx, section){
+    var h = Math.max($(section).height(), 600);
+    var h_diff = Math.max(0, document.documentElement.clientHeight-h);
+    $(section).css('padding-top', h_diff/2);
+    $(section).css('padding-bottom', h_diff+h);
+  });
+};
+
 $(document).ready(update_layout_file_URI);
+$(document).ready(set_padding_for_sections);
+$(window).resize(set_padding_for_sections);
