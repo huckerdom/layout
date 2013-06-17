@@ -45,7 +45,7 @@ FIXME: Write usage instructions
 </section>
 
 <section id="credits">
-Authors
+Credits
 =======
 
 ##### Issues and suggestions
@@ -62,5 +62,8 @@ Layout is
 the BSD 3-clause license.
 
 Layout uses [Raphael](http://raphaeljs.com) for SVG drawing and
-animations and [Glyphicons](http://glyphicons.com) for buttons.
+animations and [Glyphicons](http://glyphicons.com) for buttons.  We
+also use the services of [Whatever Origin](http://whateverorigin.org)
+to fetch layout json files, without having to worry about the same
+origin policy.
 </section>
