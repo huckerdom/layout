@@ -24,6 +24,14 @@ Currently, you can:
 - Animate plays -- step-by-step or continuously
 - Save/download and load plays
 - [Embed](#embed) plays created using layout, in any web-page!
+- Share Layouts
+    1. Download your layout file
+    2. Upload it somewhere on the web
+    3. Enter URL to raw file
+    <form action="#demo" method="GET">
+    <input type="text" name="q" value="" placeholder="Enter URL to a layout json file"/>
+    <input type="submit" value="Load file"/>
+    </form>
 
 Layout is currently in "alpha" and some of the requested/planned/hope-to-add
 features are listed
