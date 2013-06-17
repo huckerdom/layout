@@ -15,3 +15,5 @@
   - Handlers and cutters can be shown in different colors
   - Convert to PDF
   - Score?
+* Issues
+  - Help is broken (Should be generated in a better way)

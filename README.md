@@ -4,8 +4,8 @@ Layout
 
 Layout is a whiteboard for planning plays in Ultimate.
 
-It also refers to the act of
-[planning](http://www.dict.org/bin/Dict?Form=Dict2&Database=*&Query=layout), and
+It also refers to the acts of
+[planning](http://www.dict.org/bin/Dict?Form=Dict2&Database=*&Query=layout), or
 [diving for the disc](http://www.ultipedia.org/wiki/Layout).
 
 Layout lets you [view and create animations](#demo), here and [embed](#embed) them into your site.
