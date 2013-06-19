@@ -108,17 +108,17 @@
     // For each canvas, look at the data file and do shit!
     for (var i=0; i<canvases.length; i++) {
       var game = Object.create(Game);
-      var width = $(canvases[i]).attr('width'),
-          height = $(canvases[i]).attr('height'),
-          display;
+      var canvas = $(canvases[i]);
+
       game.players = {};
       game.discs = {};
       game.states = [];
       game._control_points = {};
-      game.canvas = Raphael(canvases[i], width, height);
       game._mode = canvases[i].dataset.mode || 'play';
-      display = calculate_display(width, height);
-      game.scale = display[0], game.view = display[1];
+      var display = calculate_display(canvas.attr('width'), canvas.attr('height'));
+      var width = display[0], height = display[1];
+      game.canvas = Raphael(canvases[i], width, height);
+      game.scale = display[2], game.view = display[3];
       game._center = [width/2, height/2];
       game._transform = ('R90,'+game._center);
       Game.instances.push(game);
@@ -814,15 +814,16 @@
     width = parseInt(width);
     height = parseInt(height);
     if (width > height) {
-      w = (DIMENSIONS.length+DIMENSIONS.boundary);
-      h = (DIMENSIONS.breadth+DIMENSIONS.boundary);
+      w = (DIMENSIONS.length+DIMENSIONS.boundary*2);
+      h = (DIMENSIONS.breadth+DIMENSIONS.boundary*2);
       view = 'landscape'
     } else {
-      w = (DIMENSIONS.breadth+DIMENSIONS.boundary);
-      h = (DIMENSIONS.length+DIMENSIONS.boundary);
+      w = (DIMENSIONS.breadth+DIMENSIONS.boundary*2);
+      h = (DIMENSIONS.length+DIMENSIONS.boundary*2);
       view = 'portrait'
     }
-    return [Math.floor(Math.min(width/w, height/h)), view];
+    var scale = Math.min(width/w, height/h);
+    return [Math.ceil(w*scale), Math.ceil(h*scale), scale, view];
   }
 
   var add_UI = function(game) {
