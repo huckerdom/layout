@@ -15,11 +15,8 @@ Layout lets you [view and create animations](#demo), here and [embed](#embed) th
 Features
 ========
 
-Layout lets you design, save and share plays and drills.
+Layout lets you design, save and share plays and drills.  You can:
 
-Currently, you can:
-
-- Move players across the field
 - Create plays by moving players and capturing key states
 - Animate plays -- step-by-step or continuously
 - Save/download and load plays

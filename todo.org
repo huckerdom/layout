@@ -1,19 +1,24 @@
 * Ideas
+  - Add notes/commentary/description to each play, each frame/stage
+  - Convert to PDF
+  - Automatically allow saving layout to a gist (or elsewhere)
+  - Add remove players
+  - Add remove states
+  - Move states around
   - Snap players to grid
   - Undo, redo
-  - Add notes/commentary/description to each play, each frame/stage
   - Offense only mode; Offense and Defense mode; Defense only mode...
-  - Add remove players
   - Standard templates
   - Show players' trail to see how players are moving
   - Add tools to measure distances or add some sort of a ruler/grid.
   - Rulers/scale to see the strategy to scale...
   - allow selecting multiple players (all offense or defense players at once, etc), and move with keyboard/mouse?
   - Allow drawing lines... which can be saved in the state.. Different line types, and line colors.
-  - Share
-    - atleast linkable :: dump state file to gist, read back and show
   - Handlers and cutters can be shown in different colors
-  - Convert to PDF
   - Score?
 * Issues
   - Help is broken (Should be generated in a better way)
+  - Portrait mode is broken!
+    + Add tests
+    + Control points are wrongly placed
+    + Is state correct? I guess not.
