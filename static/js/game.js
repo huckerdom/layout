@@ -151,7 +151,7 @@
     this.read_layout_file();
 
     // Add buttons and other stuff
-    add_UI(this);
+    this.add_UI();
 
   };
 
@@ -532,6 +532,116 @@
     this.states = [];
   };
 
+  // Function to Add UI using SVG
+  Game.add_UI = function(){
+
+    // Useful to get position of next box or whatever
+    this._icons = this.canvas.set();
+    var game = this;
+
+    // Forward button
+    var forward = 'M256,90c91.742,0,166,74.245,166,166c0,91.741-74.244,166-166,166c-91.742,0-166-74.245-166-166C90,164.259,164.246,90,256,90z M256,50C142.23,50,50,142.229,50,256s92.23,206,206,206c113.771,0,206-92.229,206-206S369.771,50,256,50z M303.52,276.929v32.969l77.518-77.386l-77.518-77.385v32.97c0,0-136.162,27.71-163.502,146.774C198.227,272.546,303.52,276.929,303.52,276.929z';
+
+    // Back button
+    var back = 'M256,90c91.742,0,166,74.245,166,166c0,91.741-74.244,166-166,166c-91.742,0-166-74.245-166-166C90,164.259,164.246,90,256,90z M256,50C142.23,50,50,142.229,50,256s92.23,206,206,206c113.771,0,206-92.229,206-206S369.771,50,256,50z';
+
+    // Animate button
+    var animate = 'M256,92.481c44.433,0,86.18,17.068,117.553,48.064C404.794,171.411,422,212.413,422,255.999s-17.206,84.588-48.448,115.455c-31.372,30.994-73.12,48.064-117.552,48.064s-86.179-17.07-117.552-48.064C107.206,340.587,90,299.585,90,255.999s17.206-84.588,48.448-115.453C169.821,109.55,211.568,92.481,256,92.481 M256,52.481c-113.771,0-206,91.117-206,203.518c0,112.398,92.229,203.52,206,203.52c113.772,0,206-91.121,206-203.52C462,143.599,369.772,52.481,256,52.481L256,52.481z M206.544,357.161V159.833l160.919,98.666L206.544,357.161z';
+
+    // Stop button
+    var stop = 'M335.084,339.042H178.916V172.958h156.168V339.042z M256,92.481c44.433,0,86.18,17.068,117.553,48.064C404.794,171.411,422,212.413,422,255.999s-17.206,84.588-48.448,115.455c-31.372,30.994-73.12,48.064-117.552,48.064s-86.179-17.07-117.552-48.064C107.206,340.587,90,299.585,90,255.999s17.206-84.588,48.448-115.453C169.821,109.55,211.568,92.481,256,92.481 M256,52.481c-113.771,0-206,91.117-206,203.518c0,112.398,92.229,203.52,206,203.52c113.772,0,206-91.121,206-203.52C462,143.599,369.772,52.481,256,52.481L256,52.481z';
+
+    // Capture state
+    var add_state = 'M363.68,288.439h-76.24v76.238h-58.877v-76.238h-76.24v-58.877h76.24v-76.24h58.877v76.24h76.24V288.439zM462,256c0,113.771-92.229,206-206,206S50,369.771,50,256S142.229,50,256,50S462,142.229,462,256z M422,256c0-91.755-74.258-166-166-166c-91.755,0-166,74.259-166,166c0,91.755,74.258,166,166,166C347.755,422,422,347.741,422,256z';
+
+    var delete_state = 'M363.68,288.439H152.322v-58.877H363.68V288.439z M462,256c0,113.771-92.229,206-206,206S50,369.771,50,256S142.229,50,256,50S462,142.229,462,256z M422,256c0-91.755-74.258-166-166-166c-91.755,0-166,74.259-166,166c0,91.755,74.258,166,166,166C347.755,422,422,347.741,422,256z';
+
+    var clear_all = 'M345.938,314.829l-57.848-57.841l57.842-57.847l-31.102-31.08l-57.832,57.841l-57.841-57.832l-31.095,31.075l57.85,57.847l-57.843,57.85l31.075,31.097l57.857-57.86l57.856,57.854L345.938,314.829z M256,111c38.73,0,75.144,15.083,102.53,42.47S401,217.27,401,256s-15.083,75.144-42.47,102.53S294.73,401,256,401s-75.144-15.083-102.53-42.47S111,294.73,111,256s15.083-75.144,42.47-102.53S217.27,111,256,111z M256,71C153.827,71,71,153.828,71,256s82.827,185,185,185c102.172,0,185-82.828,185-185S358.172,71,256,71z';
+
+    var upload = 'M461.4,299.303c0,50.852-41.371,92.221-92.221,92.221h-36.847v-40h36.847c28.795,0,52.221-23.426,52.221-52.221c0-35.412-23.816-53.746-49.18-53.844c-1.303-58.902-40.637-84.982-78.664-84.982c-50.308,0-70.974,38.08-76.131,52.662c-20.51-29.582-76.177-7.248-64.641,32.348C118.25,239.225,90.6,265.225,90.6,299.303c0,28.795,23.427,52.221,53.222,52.221h50.512v40h-50.512c-51.852,0-93.222-41.369-93.222-92.221c0-41.408,27.561-77.127,66.153-88.463c10.854-36.998,49.784-58.686,86.933-48.779c22.24-26.299,54.773-41.584,89.871-41.584c57.115,0,105.365,40.816,115.781,95.777C440.941,231.457,461.4,263.389,461.4,299.303z M189.752,315.263h33.84v76.261h79.486v-76.261h33.84l-73.582-73.708L189.752,315.263z';
+
+    var download = 'M461.4,244.318c0,50.852-41.371,92.221-92.221,92.221h-36.847v-40h36.847c28.795,0,52.221-23.426,52.221-52.221c0-35.412-23.816-53.746-49.18-53.844c-1.303-58.902-40.637-84.982-78.664-84.982c-50.308,0-70.974,38.08-76.131,52.662c-20.51-29.582-76.177-7.248-64.641,32.348C118.25,184.24,90.6,210.24,90.6,244.318c0,28.795,23.427,52.221,53.222,52.221h50.512v40h-50.512c-51.852,0-93.222-41.369-93.222-92.221c0-41.408,27.561-77.127,66.153-88.463c10.854-36.998,49.784-58.686,86.933-48.779c22.24-26.299,54.773-41.584,89.871-41.584c57.115,0,105.365,40.816,115.781,95.777C440.941,176.473,461.4,208.404,461.4,244.318z M336.918,372.8h-33.84v-76.261h-79.486V372.8h-33.84l73.582,73.708L336.918,372.8z';
+
+    this.add_transformed_path(forward, 'Step forward', function(){game.animate()});
+    this.add_transformed_path(animate, 'Animate (Loop)', function(){game.animate(null, null, true)});
+    this.add_transformed_path(stop, 'Stop animation', function(){game.stop()});
+    // this.add_transformed_path(back, 'Back button (non-functional)');
+
+    // Download
+    window.URL = window.URL || window.webkitURL;
+    // Major Hack to get downloading working.  The SVG gets embedded inside an anchor tag!
+    var download_link = $('<a>').appendTo(this.canvas.canvas.parentElement).append(this.canvas.canvas);
+    this.add_transformed_path(download, 'Download Layout', function(){
+      var blob = new Blob([game.save_game()], {type: 'text/plain'});
+      var d = new Date(), date = d.getDate(), month = d.getMonth() + 1, year = d.getFullYear();
+      $(download_link).attr("href", window.URL.createObjectURL(blob))
+        .attr("download", "layout-" + year + '-' + month + '-' + date + ".txt");
+      setTimeout(function(){
+        $(download_link).removeAttr('href').removeAttr('download');
+      }, 50);
+    });
+
+    if (game._mode != 'play') {
+      // Spacer
+      this.add_transformed_path('M0,0 50,0 50,50, 0,50', '');
+
+      this.add_transformed_path(add_state, 'Capture State', function(){game.capture_state()});
+      // this.add_transformed_path(delete_state, 'Delete', function(){console.log('CLEAR!')});
+      this.add_transformed_path(clear_all, 'Clear All Game States', function(){game.clear_states()});
+
+
+      // Upload button
+      var upload_button = $('<input type=file>').attr('id', 'upload-game-file')
+        .attr('accept', 'text/plain').css('display', 'none')
+        .change(function(evt){
+          read_game_files(evt, game);
+        });
+      upload_button.insertAfter(game.canvas.canvas);
+      this.add_transformed_path(upload, 'Load layout', function(){upload_button.click()});
+    }
+
+    // Center the icon_set
+    var bbox = this._icons.getBBox()
+    if (this.view == 'landscape') {
+      this._icons.transform('...T'+[0, this._center[1]-bbox.y-bbox.height/2]);
+    } else {
+      this._icons.transform('...t'+[this._center[0]-bbox.y-bbox.width/2, 0]);
+    }
+
+  };
+
+  Game.add_transformed_path = function(path, tooltip, onclick){
+    var icon = this.canvas.path(path).attr({fill: "#000", stroke: "none"});
+    var bbox = icon.getBBox();
+    var side = DIMENSIONS.boundary * this.scale;
+    var space = side * 0.1;
+    var icons_bbox = this._icons.getBBox();
+
+    if (this.view == 'landscape'){
+      var scale = (side * 0.8) / bbox.width;
+      var x = space;
+      var y = this._icons.length && (icons_bbox.height + icons_bbox.y + space) || side + space;
+    } else {
+      scale = (side * 0.8) / bbox.height;
+      x = this._icons.length && (icons_bbox.width + icons_bbox.x + space) || side;
+      y = space;
+    }
+    var background = this.canvas.rect(bbox.x, bbox.y, bbox.width, bbox.height)
+      .attr({fill: "#00aa00", stroke: "none"});
+    icon.toFront();
+    var transform =  'S' + scale + ' T' + [x-bbox.x, y-bbox.y];
+    var set = this.canvas.set(background, icon).transform('S' + scale);
+    bbox = background.getBBox();
+    set.transform('...T' +[x-bbox.x, y-bbox.y]);
+    set.attr({'title': tooltip});
+    set.click(onclick);
+    this._icons.push(set);
+
+    // If no tooltip, icon is hidden; Used to add space
+    if (!tooltip){set.hide();};
+
+    return set;
+  }
 
   // Get the game instance from a canvas object
   Game.get_from_canvas = function(canvas){
@@ -825,106 +935,6 @@
     var scale = Math.min(width/w, height/h);
     return [Math.ceil(w*scale), Math.ceil(h*scale), scale, view];
   }
-
-  var add_UI = function(game) {
-    var container = $(game.canvas.canvas.parentElement);
-    var ui_div = $('<div>').addClass('button-container').appendTo(container);
-
-    // Download button
-    window.URL = window.URL || window.webkitURL;
-    var download_link = $('<a>');
-    var download_img = $('<img>').attr('src', 'static/img/download.png').appendTo(download_link);
-    var download = $('<button>').attr('id', 'saveGame').append(download_link).appendTo(ui_div).attr('title', 'Download Game');
-    download.click(function(evt){
-      var blob = new Blob([game.save_game()], {type: 'text/plain'});
-      var d = new Date(), date = d.getDate(), month = d.getMonth() + 1, year = d.getFullYear();
-      download_link.attr("href", window.URL.createObjectURL(blob))
-        .attr("download", "layout-" + year + '-' + month + '-' + date + ".txt");
-    });
-
-    // Upload button
-    var upload_button = $('<input type=file>').attr('id', 'upload-game-file')
-      .attr('accept', 'text/plain').css('display', 'none')
-      .change(function(evt){
-        read_game_files(evt, game);
-      });
-
-    var load_img = $('<img>').attr('src', 'static/img/load.png');
-    var upload = $('<button>').attr('id', 'loadGame').append(load_img)
-      .appendTo(ui_div).click(function(evt){upload_button.click()})
-      .attr('title', 'Load Game');
-    if (game._mode != 'play') {
-      upload_button.insertAfter(game.canvas.canvas).attr('href', '#');
-      upload.appendTo(ui_div);
-    }
-
-
-    // Capture state
-    var capture_img = $('<img>').attr('src', 'static/img/capture.png');
-    var capture = $('<button>').attr('id', 'captureGameState').appendTo(ui_div).append(capture_img)
-      .click(function(evt){game.capture_state()})
-      .attr('title', 'Capture State');
-    if (game._mode != 'play') {
-      capture.appendTo(ui_div);
-    }
-
-    // Clear all game states
-    var clear_img = $('<img>').attr('src', 'static/img/clear.png');
-    var clear = $('<button>').attr('id', 'clearGameStates').append(clear_img).appendTo(ui_div)
-      .click(function(evt){game.clear_states()})
-      .attr('title', 'Clear All Game States');
-    if (game._mode != 'play') {
-      clear.appendTo(ui_div);
-    }
-
-    // Animate game
-    var anim_img = $('<img>').attr('src', 'static/img/animate.png');
-    $('<button>').attr('id', 'animateLoop').appendTo(ui_div).append(anim_img)
-      .click(function(evt){game.animate(null, null, true)})
-      .attr('title', 'Animate (Loop)');
-
-    // Stop animation
-    var stop_img = $('<img>').attr('src', 'static/img/stop.png');
-    $('<button>').attr('id', 'stopAnimateLoop').appendTo(ui_div).append(stop_img)
-      .click(function(evt){game.stop()})
-      .attr('title', 'Stop Animation');
-
-    // Step forward
-    var fwd_img = $('<img>').attr('src', 'static/img/forward.png');
-    $('<button>').attr('id', 'stepForward').appendTo(ui_div).append(fwd_img)
-      .click(function(evt){game.animate()})
-      .attr('title', 'Step forward');
-
-    // Step backward
-
-    // Help dialog
-    var help_img = $('<img>').attr('src', 'static/img/help.png');
-
-    // FIXME: Append close button...
-    // content of the help dialog
-    var content = $('<div>').attr('id', 'help-content').css('display', 'none').appendTo(container);
-    var button_table = $('<table>').attr('id', 'help-button-list').appendTo(content);
-    $('img', ui_div).each(function(idx, el){
-      var row = $('<tr>').append($('<td>').append($(el).clone()))
-        .append($('<td>').text($(el).attr('title')));
-      button_table.append(row);
-    });
-
-    var toggle_help = function(evt){
-      var display = content.css('display');
-      content.css('display', display=='none'?'block':'none');
-    };
-
-    var dlg_close = $('<button>').text('x').click(toggle_help).css('right', '0px').css('top', '0px')
-      .css('position', 'absolute');
-    var row = $('<tr>').append($('<td>'))
-      .append($('<td>').append(dlg_close))
-      .appendTo(button_table);
-
-
-    $('<button>').attr('id', 'showHideHelp').appendTo(ui_div).append(help_img)
-      .click(toggle_help).attr('title', 'Show Help');
-  };
 
   var read_game_files = function(evt, game){
     var file = evt.target.files[0];
