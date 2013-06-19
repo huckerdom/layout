@@ -33,6 +33,9 @@ Layout lets you design, save and share plays and drills.  You can:
 Layout is currently in "alpha" and some of the requested/planned/hope-to-add
 features are listed
 [here](https://raw.github.com/huckerdom/layout/master/todo.org).
+
+Layout is best supported in the latest versions of Chromium or Google
+Chrome.  This site is best viewed at resolutions 1024x768 and above.
 </section>
 
 <section id="demo">
@@ -67,8 +70,9 @@ Layout is
 the BSD 3-clause license.
 
 Layout uses [Raphael](http://raphaeljs.com) for SVG drawing and
-animations and [Glyphicons](http://glyphicons.com) for buttons.  We
-also use the services of [Whatever Origin](http://whateverorigin.org)
-to fetch layout json files, without having to worry about the same
-origin policy.
+animations, SVG icons from [iconmonstr](http://iconmonstr.com/) and
+PNG icons from [Glyphicons](http://glyphicons.com).  We also use the
+services of [Whatever Origin](http://whateverorigin.org) to fetch
+layout json files, without having to worry about the same origin
+policy.
 </section>
