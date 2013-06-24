@@ -474,7 +474,7 @@
       for (var player_id in this.players[team_id]) {
         var player = this.players[team_id][player_id];
         var state = this.states[end].players[team_id][player_id];
-        clear_control_point_info(state, disc);
+        clear_control_point_info(state, player);
         if ( ! called ) {
           player.animate(state, time, cb);
           called = true;
@@ -776,6 +776,7 @@
             p2x = new_state._control_points[2].x, p2y = new_state._control_points[2].y,
             p3x = new_state.x, p3y = new_state.y;
         this.body.attr({along: [0, p0x, p0y, p1x, p1y, p2x, p2y, p3x, p3y]});
+        this.label.attr({along: [0, p0x, p0y, p1x, p1y, p2x, p2y, p3x, p3y]});
         new_state = {along: [1, p0x, p0y, p1x, p1y, p2x, p2y, p3x, p3y]}
       }
 
@@ -874,10 +875,6 @@
     P3._control_points[2] = game._control_points[2].get_state();
 
   }
-
-  Game.s = drag_obj_start;
-  Game.m = drag_obj_move;
-  Game.d = drag_obj_done;
 
   var hide_control_points = function() {
     var game = Game.get_from_canvas(this.paper)
