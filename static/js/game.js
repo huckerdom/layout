@@ -36,16 +36,22 @@
     var scripts = [
 
       {
-        name: 'raphael.js',
+        name: 'raphael',
         url: 'https://raw.github.com/DmitryBaranovskiy/raphael/master/raphael-min.js',
         window_object: 'window.Raphael',
       },
 
       {
-        name: 'jquery.js',
+        name: 'knockout',
+        url: 'http://knockoutjs.com/downloads/knockout-2.2.1.js',
+        window_object: 'window.ko',
+      },
+
+      {
+        name: 'jquery',
         url: 'http://code.jquery.com/jquery-1.9.1.min.js',
         window_object: 'window.jQuery',
-      }
+      },
 
     ];
 
