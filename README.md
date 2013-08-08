@@ -40,7 +40,7 @@ Chrome.  This site is best viewed at resolutions 1024x768 and above.
 
 <section id="demo">
 <div class="layout" width="900" height="450" data-mode="edit">
-<script src="static/js/game.js"></script>
+<script data-main="static/js/main.js" src="static/js/require.js"></script>
 </div>
 </section>
 

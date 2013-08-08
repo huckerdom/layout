@@ -11,7 +11,7 @@
     line_width: 0.1,
     player_radius: 0.8,
     disc_radius: 0.5
-  }
+  };
 
   var svgNS = "http://www.w3.org/2000/svg";
 
@@ -30,85 +30,11 @@
   };
 
 
-  // Initialize game.js
-  Game.init = function(){
-    var head = document.getElementsByTagName("head")[0];
-    var scripts = [
-
-      {
-        name: 'raphael',
-        url: 'https://raw.github.com/DmitryBaranovskiy/raphael/master/raphael-min.js',
-        window_object: 'window.Raphael',
-      },
-
-      {
-        name: 'knockout',
-        url: 'http://knockoutjs.com/downloads/knockout-2.2.1.js',
-        window_object: 'window.ko',
-      },
-
-      {
-        name: 'jquery',
-        url: 'http://code.jquery.com/jquery-1.9.1.min.js',
-        window_object: 'window.jQuery',
-      },
-
-    ];
-
-    document.onreadystatechange = function(){
-
-      var initialize = function(){
-        var done = true;
-
-        scripts.forEach(function(script){
-          if (eval(script.window_object) == undefined) {
-            done = false;
-          };
-        });
-
-        if (done) {
-          console.log('All external libraries loaded!');
-          // Hacky, but not too much, I guess.
-          if (window.QUnit) { QUnit.load();
-                              QUnit.start();
-                            };
-          Game.create_instances();
-        };
-
-      };
-
-      // Wait for all other js (and images!) to finish loading..
-      // Load those libraries which aren't already loaded
-      if (document.readyState === "complete" && !Game.initialized) {
-
-        // If all the libraries are already loaded
-        initialize();
-
-        scripts.forEach(function(script){
-          if (eval(script.window_object) == undefined) {
-            console.log('Loading ' + script.name);
-            var newScript = document.createElement('script');
-            newScript.type = 'text/javascript';
-            newScript.src = script.url;
-            head.appendChild(newScript);
-            newScript.onload = initialize;
-            newScript.onreadystatechange = initialize;
-          };
-        });
-
-      };
-
-    };
-
-    // FIXME: Load <link rel="STYLESHEET" href="static/css/game.css" type="text/css">
-
-  };
-
   // Create games for each canvas
   Game.create_instances = function() {
     Game.initialized = true;
 
-    var canvases = $('div[class~=layout]'), game;
+    var canvases = $('div[class~=layout]');
     // FIXME: we could add text/gif while waiting for js to load, which is removed on load.
 
     // For each canvas, look at the data file and do shit!
@@ -144,7 +70,7 @@
   Game.reset = function() {
     Game.instances = [];
     Game.initialized = false;
-  }
+  };
 
   // Initial setup for a game instance
   Game.init_game = function() {
@@ -179,7 +105,7 @@
     // Draw field
     var field = this.canvas.rect(x, y, length, breadth)
       .attr({'id': 'field', 'fill': 'green',
-             'stroke': '#ffffff', 'stroke-width': DIMENSIONS.line_width*scale,
+             'stroke': '#ffffff', 'stroke-width': DIMENSIONS.line_width*scale
             });
     this._field_id = field.id;
     this.all_elements.push(field);
@@ -282,13 +208,13 @@
       case "o":
       P = OffensivePlayer;
       container = this.players["o"];
-      if (container === undefined) { this.players["o"] = container = {} };
+      if (container === undefined) { this.players["o"] = container = {}; };
       break;
 
       case "d":
       P = DefensivePlayer;
       container = this.players["d"];
-      if (container === undefined) { this.players["d"] = container = {} };
+      if (container === undefined) { this.players["d"] = container = {}; };
       break;
 
       case "disc":
@@ -309,15 +235,15 @@
 
     // Check if an object with specified 'id' already exists.
     if (container[id] != undefined) {
-      throw "Object of type: " + type + " with id: " + id + ", already exists"
+      throw "Object of type: " + type + " with id: " + id + ", already exists";
     }
 
     // If no id is specified, auto-assign an id.
     if (id === undefined) {
       var ids = [];
-      for (var x in container) { ids.push(x) };
+      for (var x in container) { ids.push(x); };
       if (ids.length > 0) {
-        id =  Math.max.apply(this, ids) + 1
+        id =  Math.max.apply(this, ids) + 1;
       } else {
         id = 1;
       }
@@ -343,7 +269,7 @@
     for (var team_id in this.players) {
       var team = state.players[team_id];
       for (var player_id in this.players[team_id]) {
-        if (team === undefined) { state.players[team_id] = team = {} };
+        if (team === undefined) { state.players[team_id] = team = {}; };
         var p = this.players[team_id][player_id].get_state();
         team[player_id] = p;
       };
@@ -354,7 +280,7 @@
     }
 
     return state;
-  }
+  };
 
   // Add the current state of the stage to the list of states in Game
   Game.capture_state = function(){
@@ -376,7 +302,7 @@
       } else {
         return value;
       }
-    }
+    };
 
     return JSON.stringify(this.states, fix_data, "  ");
   };
@@ -395,7 +321,7 @@
       } else {
         return value;
       }
-    }
+    };
 
     try {
       var states = JSON.parse(text, fix_data);
@@ -405,14 +331,14 @@
 
     this.states = states;
     this.current_state = 0;
-    if (this.states) {this.reset_to_state(this.current_state)};
+    if (this.states) { this.reset_to_state(this.current_state); };
     return this;
   };
 
   Game.reset_to_state = function(state_index){
     state_index = state_index||0;
     var state = this.states[state_index];
-    if (!state) {return;};
+    if (!state) { return undefined;};
     this.current_state = state_index;
 
     for (var team_id in this.players) {
@@ -443,7 +369,7 @@
     start = start < (this.states.length-1) && start ||
             this.current_state < (this.states.length-1) && this.current_state || 0;
     var end = start+1;
-    if (start != this.current_state) { this.reset_to_state(start) };
+    if (start != this.current_state) { this.reset_to_state(start); };
 
     // callback passed to some animate?
     var called = false;
@@ -452,10 +378,10 @@
     if (loop) {
       var cb = function(){
         next_step();
-        if (callback) { callback() };
-      }
+        if (callback) { callback(); };
+      };
     } else {
-      var cb = callback
+      cb = callback;
     }
 
     // Clear the control point info if it's useless
@@ -479,7 +405,7 @@
     for (var team_id in this.players) {
       for (var player_id in this.players[team_id]) {
         var player = this.players[team_id][player_id];
-        var state = this.states[end].players[team_id][player_id];
+        state = this.states[end].players[team_id][player_id];
         clear_control_point_info(state, player);
         if ( ! called ) {
           player.animate(state, time, cb);
@@ -522,7 +448,7 @@
         game.update(data);
       });
     } else {
-      var jqxhr = $.getJSON('http://whateverorigin.org/get?url=' +
+      jqxhr = $.getJSON('http://whateverorigin.org/get?url=' +
                         encodeURIComponent(url.toString()) + '&callback=?');
       jqxhr.done(function(data){
         game.update(data.contents);
@@ -607,7 +533,7 @@
     }
 
     // Center the icon_set
-    var bbox = this._icons.getBBox()
+    var bbox = this._icons.getBBox();
     if (this.view == 'landscape') {
       this._icons.transform('...T'+[0, this._center[1]-bbox.y-bbox.height/2]);
     } else {
@@ -647,7 +573,7 @@
     if (!tooltip){set.hide();};
 
     return set;
-  }
+  };
 
   // Get the game instance from a canvas object
   Game.get_from_canvas = function(canvas){
@@ -661,7 +587,7 @@
 
   // Get the object's state in the game's current state
   Game.get_object_state = function(obj) {
-    if (this.states.length == 0) { return };
+    if (this.states.length == 0) { return undefined; };
     var container, current_state = this.states[this.current_state];
 
     switch (obj.type.toLowerCase()) {
@@ -676,7 +602,7 @@
       break;
 
       default:
-      return;
+      return undefined;
 
     };
 
@@ -700,8 +626,8 @@
 
     set x(val) {
       this._x = val;
-      if (this.label) {this.label.attr({x: val})};
-      if (this.body) {this.body.attr({cx: val})};
+      if (this.label) { this.label.attr({x: val}); };
+      if (this.body) { this.body.attr({cx: val}); };
     },
 
     get y() {
@@ -711,8 +637,8 @@
 
     set y(val) {
       this._y = val;
-      if (this.label) {this.label.attr({y: val})};
-      if (this.body) {this.body.attr({cy: val})};
+      if (this.label) { this.label.attr({y: val}); };
+      if (this.body) { this.body.attr({cy: val}); };
     },
 
     // Create an object of this type
@@ -723,7 +649,7 @@
       obj.id = state.id;
       obj.type = state.type;
       obj._mode = state._mode || 'play';
-      if (state.radius) {obj.radius = state.radius};
+      if (state.radius) { obj.radius = state.radius; };
       return obj;
     },
 
@@ -733,18 +659,18 @@
       this.body = canvas.circle(this.x, this.y, this.radius).attr({'fill': this.color});
       this.label = canvas.text(this.x, this.y, this.id)
         .attr({'fill':'green', 'font-size': (this.radius * 1.5)});
-      this.body.node.id = this.type + '-' + this.id + '-' + 'body'
-      this.label.node.id = this.type + '-' + this.id + '-' + 'label'
+      this.body.node.id = this.type + '-' + this.id + '-' + 'body';
+      this.label.node.id = this.type + '-' + this.id + '-' + 'label';
       // Create a group that holds the body and the label together.
       // Ability to drag the player around
-      this._elements = canvas.set(this.body, this.label)
+      this._elements = canvas.set(this.body, this.label);
 
       if (this._mode == 'edit') {
         this._elements.drag(drag_obj_move, drag_obj_start, drag_obj_done, this, this, this);
        // FIXME: Add a doubleclick handler to change the label.
       }
 
-      if (!this.show_label) { this.label.hide() };
+      if (!this.show_label) { this.label.hide(); };
 
       return this._elements;
     },
@@ -763,7 +689,7 @@
         id:this.id,
         x: this.x,
         y: this.y,
-        _control_points: this._control_points,
+        _control_points: this._control_points
       };
     },
 
@@ -783,7 +709,7 @@
             p3x = new_state.x, p3y = new_state.y;
         this.body.attr({along: [0, p0x, p0y, p1x, p1y, p2x, p2y, p3x, p3y]});
         this.label.attr({along: [0, p0x, p0y, p1x, p1y, p2x, p2y, p3x, p3y]});
-        new_state = {along: [1, p0x, p0y, p1x, p1y, p2x, p2y, p3x, p3y]}
+        new_state = {along: [1, p0x, p0y, p1x, p1y, p2x, p2y, p3x, p3y]};
       }
 
       var anim = Raphael.animation(new_state, time, 'linear', cb);
@@ -839,9 +765,9 @@
     }
 
     // Clear out old cached locations of control points
-    var cp = this._control_points
+    var cp = this._control_points;
     if (cp && previous_state && (cp[0].x != previous_state.x || cp[0].y != previous_state.y)) {
-      this._control_points = cp = undefined
+      this._control_points = cp = undefined;
     };
 
     if ( previous_state != undefined && (game._control_points['current'] != this  || !cp)) {
@@ -880,10 +806,10 @@
     P3._control_points[1] = game._control_points[1].get_state();
     P3._control_points[2] = game._control_points[2].get_state();
 
-  }
+  };
 
   var hide_control_points = function() {
-    var game = Game.get_from_canvas(this.paper)
+    var game = Game.get_from_canvas(this.paper);
     game.hide_control_points();
   };
 
@@ -929,15 +855,15 @@
     if (width > height) {
       w = (DIMENSIONS.length+DIMENSIONS.boundary*2);
       h = (DIMENSIONS.breadth+DIMENSIONS.boundary*2);
-      view = 'landscape'
+      view = 'landscape';
     } else {
       w = (DIMENSIONS.breadth+DIMENSIONS.boundary*2);
       h = (DIMENSIONS.length+DIMENSIONS.boundary*2);
-      view = 'portrait'
+      view = 'portrait';
     }
     var scale = Math.min(width/w, height/h);
     return [Math.ceil(w*scale), Math.ceil(h*scale), scale, view];
-  }
+  };
 
   var read_game_files = function(evt, game){
     var file = evt.target.files[0];
@@ -946,7 +872,7 @@
     gameReader.readAsText(file);
     gameReader.onload = function(evt){
       var text = evt.target.result;
-      if (text) { game.update(text) };
+      if (text) { game.update(text); };
     };
 
   };
@@ -962,7 +888,6 @@
   };
 
   /********************************************************************************/
-  Game.init()
   window.Game = Game;
 
 })();

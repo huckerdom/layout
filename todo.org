@@ -22,3 +22,6 @@
     + Add tests
     + Control points are wrongly placed
     + Is state correct? I guess not.
+  - Don't load jQuery or other libraries, if they are already
+    loaded...
+    http://stackoverflow.com/questions/12267990/make-requirejs-not-reload-jquery-if-already-on-page

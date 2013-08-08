@@ -1,9 +1,4 @@
 QUnit.config.autostart = false;
-test( "test all external packages loaded", function() {
-  ok( window.jQuery, "We expect to have jQuery" );
-  ok( window.Raphael, "We expect to have Raphael" );
-  ok( window.Game.initialized, "We expect to have game.js intialized" );
-});
 
 module( "game-tests", {
   setup: function(){
