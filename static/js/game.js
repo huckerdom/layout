@@ -540,6 +540,36 @@
       this._icons.transform('...t'+[this._center[0]-bbox.y-bbox.width/2, 0]);
     }
 
+    // Add UI to display states and the commentary
+    var layout_div = $(game.canvas.canvas.parentElement.parentElement),
+        ractive;
+
+    // A display container to dump the whole Ractive template into
+    var display_container = $('<div id="container">').appendTo(layout_div);
+
+    var commentary_box = $('<span>')
+          .append('<textarea name="commentary" value="{{commentary}}" placeholder="Commentary for this step.">')
+          .append('<span>{{commentary}}</span>');
+
+    // debugger;
+    // FIXME: Add a text field to add commentary for a state.
+    this._ractive = ractive = new Ractive({
+      el: 'container',
+      template: commentary_box[0].outerHTML, //'<p>{{ current_state }}</p>',
+      data: {
+             commentary: ''
+            }
+    });
+
+
+
+
+    // var state_count = $('<span data-bind="text: current_state() + 1">');
+    // layout_div.append(state_count);
+
+    // game._view_model = new ViewModel(game.states);
+    // ko.applyBindings(game._view_model);
+
   };
 
   Game.add_transformed_path = function(path, tooltip, onclick){
